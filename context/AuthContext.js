@@ -8,70 +8,170 @@ const AuthContext = createContext(null);
 export function AuthProvider({ children }) {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [userProfile, setUserProfile] = useState({
-    name: 'Nguyễn Văn An',
-    email: 'nguyen.vana@email.com',
-    phone: '+84 90 123 4567',
-    address: 'Quận 1, TP. Hồ Chí Minh',
-    avatar: 'assets/avatar-user.png',
+    name: '',
+    email: '',
+    phone: '',
+    address: '',
+    avatar: '/assets/avatar-user.png',
+    points: 0,
   });
   const [orders, setOrders] = useState([]);
+  const [authLoading, setAuthLoading] = useState(true);
   const { showToast } = useToast();
 
-  // Load auth & profile from localStorage
+  // Check session on mount
   useEffect(() => {
-    try {
-      const logged = localStorage.getItem('dnsg_user_logged_in') === 'true';
-      setIsLoggedIn(logged);
-
-      const savedProfile = JSON.parse(localStorage.getItem('dnsg_user_profile') || '{}');
-      if (savedProfile && Object.keys(savedProfile).length > 0) {
-        setUserProfile((prev) => ({ ...prev, ...savedProfile }));
+    const checkSession = async () => {
+      try {
+        const res = await fetch('/api/auth/me');
+        if (res.ok) {
+          const data = await res.json();
+          if (data.success && data.user) {
+            setIsLoggedIn(true);
+            setUserProfile({
+              id: data.user.id,
+              name: data.user.full_name || '',
+              email: data.user.email || '',
+              phone: data.user.phone || '',
+              address: data.user.address || '',
+              district: data.user.district || '',
+              avatar: data.user.avatar || '/assets/avatar-user.png',
+              points: data.user.points || 0,
+              role: data.user.role || 'customer',
+            });
+          }
+        }
+      } catch (e) {
+        console.error('Session check failed:', e);
+      } finally {
+        setAuthLoading(false);
       }
-
-      const savedOrders = JSON.parse(localStorage.getItem('dnsg_orders') || '[]');
-      if (Array.isArray(savedOrders)) {
-        setOrders(savedOrders);
-      }
-    } catch (e) {
-      console.error('Failed to load auth state:', e);
-    }
+    };
+    checkSession();
   }, []);
 
-  const login = useCallback((email, password) => {
-    setIsLoggedIn(true);
-    try {
-      localStorage.setItem('dnsg_user_logged_in', 'true');
-    } catch (e) {}
-    showToast('Đăng nhập thành công! Chào mừng bạn quay trở lại.', '🎉');
-  }, [showToast]);
+  // Fetch orders when logged in
+  useEffect(() => {
+    if (!isLoggedIn) {
+      setOrders([]);
+      return;
+    }
+    const fetchOrders = async () => {
+      try {
+        const res = await fetch('/api/orders');
+        if (res.ok) {
+          const data = await res.json();
+          if (data.success) {
+            setOrders(data.orders || []);
+          }
+        }
+      } catch (e) {
+        console.error('Fetch orders failed:', e);
+      }
+    };
+    fetchOrders();
+  }, [isLoggedIn]);
 
-  const logout = useCallback(() => {
-    setIsLoggedIn(false);
+  const setUserFromApiResponse = useCallback((user) => {
+    setUserProfile({
+      id: user.id,
+      name: user.full_name || '',
+      email: user.email || '',
+      phone: user.phone || '',
+      address: user.address || '',
+      district: user.district || '',
+      avatar: user.avatar || '/assets/avatar-user.png',
+      points: user.points || 0,
+      role: user.role || 'customer',
+    });
+    setIsLoggedIn(true);
+  }, []);
+
+  const login = useCallback(async (email, password) => {
+    const res = await fetch('/api/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password }),
+    });
+    const data = await res.json();
+
+    if (!res.ok || !data.success) {
+      throw new Error(data.error || 'Đăng nhập thất bại.');
+    }
+
+    setUserFromApiResponse(data.user);
+    showToast(data.message || 'Đăng nhập thành công!', '🎉');
+    return data;
+  }, [showToast, setUserFromApiResponse]);
+
+  const register = useCallback(async (fullName, email, phone, password) => {
+    const res = await fetch('/api/auth/register', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ fullName, email, phone, password }),
+    });
+    const data = await res.json();
+
+    if (!res.ok || !data.success) {
+      throw new Error(data.error || 'Đăng ký thất bại.');
+    }
+
+    setUserFromApiResponse(data.user);
+    showToast(data.message || 'Đăng ký thành công!', '🎉');
+    return data;
+  }, [showToast, setUserFromApiResponse]);
+
+  const logout = useCallback(async () => {
     try {
-      localStorage.setItem('dnsg_user_logged_in', 'false');
+      await fetch('/api/auth/logout', { method: 'POST' });
     } catch (e) {}
+    setIsLoggedIn(false);
+    setUserProfile({
+      name: '',
+      email: '',
+      phone: '',
+      address: '',
+      avatar: '/assets/avatar-user.png',
+      points: 0,
+    });
+    setOrders([]);
     showToast('Đã đăng xuất tài khoản.', 'ℹ️');
   }, [showToast]);
 
-  const updateProfile = useCallback((newProfile) => {
-    setUserProfile((prev) => {
-      const updated = { ...prev, ...newProfile };
-      try {
-        localStorage.setItem('dnsg_user_profile', JSON.stringify(updated));
-      } catch (e) {}
-      return updated;
+  const updateProfile = useCallback(async (newProfile) => {
+    const res = await fetch('/api/user/profile', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        fullName: newProfile.name,
+        phone: newProfile.phone,
+        address: newProfile.address,
+        district: newProfile.district,
+      }),
     });
-    showToast('Cập nhật thông tin cá nhân thành công!', '✓');
-  }, [showToast]);
+    const data = await res.json();
 
-  const addOrder = useCallback((orderData) => {
-    setOrders((prev) => {
-      const updated = [orderData, ...prev];
-      try {
-        localStorage.setItem('dnsg_orders', JSON.stringify(updated));
-      } catch (e) {}
-      return updated;
-    });
+    if (!res.ok || !data.success) {
+      throw new Error(data.error || 'Cập nhật thất bại.');
+    }
+
+    setUserFromApiResponse(data.user);
+    showToast(data.message || 'Cập nhật thông tin thành công!', '✓');
+    return data;
+  }, [showToast, setUserFromApiResponse]);
+
+  const refreshOrders = useCallback(async () => {
+    try {
+      const res = await fetch('/api/orders');
+      if (res.ok) {
+        const data = await res.json();
+        if (data.success) {
+          setOrders(data.orders || []);
+        }
+      }
+    } catch (e) {
+      console.error('Refresh orders failed:', e);
+    }
   }, []);
 
   return (
@@ -80,10 +180,12 @@ export function AuthProvider({ children }) {
         isLoggedIn,
         userProfile,
         orders,
+        authLoading,
         login,
+        register,
         logout,
         updateProfile,
-        addOrder,
+        refreshOrders,
       }}
     >
       {children}

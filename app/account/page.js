@@ -5,49 +5,68 @@ import Link from 'next/link';
 import { useAuth } from '../../context/AuthContext';
 
 export default function AccountPage() {
-  const { isLoggedIn, userProfile, orders, login, logout, updateProfile } = useAuth();
+  const { isLoggedIn, userProfile, orders, login, register, logout, updateProfile, authLoading } = useAuth();
 
   const [authState, setAuthState] = useState('login'); // 'login' | 'signup' | 'forgot' | 'otp' | 'success' | 'profile_edit'
-  const [loginEmail, setLoginEmail] = useState('ten@vidu.com');
-  const [loginPassword, setLoginPassword] = useState('12345678');
-  const [forgotEmail, setForgotEmail] = useState('donutsaigon@gmail.com');
+  const [loginEmail, setLoginEmail] = useState('');
+  const [loginPassword, setLoginPassword] = useState('');
+  const [forgotEmail, setForgotEmail] = useState('');
   const [otpValues, setOtpValues] = useState(['', '', '', '', '']);
+  const [testOtpHint, setTestOtpHint] = useState('');
+  const [authError, setAuthError] = useState('');
+  const [authLoadingBtn, setAuthLoadingBtn] = useState(false);
+  const [signupForm, setSignupForm] = useState({ name: '', email: '', phone: '', password: '' });
   const [editProfileForm, setEditProfileForm] = useState({
-    name: userProfile.name || 'Nguyễn Văn An',
-    email: userProfile.email || 'nguyen.vana@email.com',
-    phone: userProfile.phone || '0901234567',
-    address: userProfile.address || 'Quận 1, TP. Hồ Chí Minh',
+    name: userProfile.name || '',
+    email: userProfile.email || '',
+    phone: userProfile.phone || '',
+    address: userProfile.address || '',
   });
 
-  const handleLoginSubmit = (e) => {
+  const handleLoginSubmit = async (e) => {
     e.preventDefault();
-    login(loginEmail, loginPassword);
+    setAuthError('');
+    setAuthLoadingBtn(true);
+    try {
+      await login(loginEmail, loginPassword);
+    } catch (err) {
+      setAuthError(err.message || 'Đăng nhập thất bại.');
+    } finally {
+      setAuthLoadingBtn(false);
+    }
   };
 
   const handleForgotSubmit = async (e) => {
     e.preventDefault();
     if (!forgotEmail) return;
+    setAuthError('');
+    setTestOtpHint('');
+    setAuthLoadingBtn(true);
 
     try {
-      const resendKey = process.env.NEXT_PUBLIC_RESEND_API_KEY;
-      if (resendKey) {
-        await fetch('https://api.resend.com/emails', {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${resendKey}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            from: 'Donut Saigon <onboarding@resend.dev>',
-            to: [forgotEmail.includes('@') ? forgotEmail : 'delivered@resend.dev'],
-            subject: 'Mã xác thực OTP đặt lại mật khẩu - Donut Saigon',
-            html: `<div style="font-family: Arial; padding: 20px;"><h1>Mã OTP của bạn: 82941</h1></div>`,
-          }),
-        });
-      }
-    } catch (err) {}
+      const res = await fetch('/api/auth/forgot-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: forgotEmail }),
+      });
+      const data = await res.json();
 
-    setAuthState('otp');
+      if (!res.ok || !data.success) {
+        setAuthError(data.error || 'Không thể gửi mã OTP.');
+        return;
+      }
+
+      if (data.devOtp) {
+        setTestOtpHint(data.devOtp);
+        setOtpValues(data.devOtp.split(''));
+      }
+
+      setAuthState('otp');
+    } catch (err) {
+      setAuthError('Lỗi hệ thống. Vui lòng thử lại.');
+    } finally {
+      setAuthLoadingBtn(false);
+    }
   };
 
   const handleOtpChange = (index, value) => {
@@ -62,21 +81,75 @@ export default function AccountPage() {
     }
   };
 
-  const handleOtpSubmit = (e) => {
+  const handleOtpSubmit = async (e) => {
     e.preventDefault();
-    login('nguyen.vana@email.com', 'password123');
+    const code = otpValues.join('');
+    if (code.length < 5) {
+      setAuthError('Vui lòng nhập đầy đủ 5 số OTP.');
+      return;
+    }
+    setAuthError('');
+    setAuthLoadingBtn(true);
+
+    try {
+      const res = await fetch('/api/auth/verify-otp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: forgotEmail, code }),
+      });
+      const data = await res.json();
+
+      if (!res.ok || !data.success) {
+        setAuthError(data.error || 'Mã OTP không đúng.');
+        return;
+      }
+
+      // OTP verified — user is now logged in (JWT cookie set by API)
+      window.location.reload();
+    } catch (err) {
+      setAuthError('Lỗi hệ thống. Vui lòng thử lại.');
+    } finally {
+      setAuthLoadingBtn(false);
+    }
   };
 
-  const handleSignupSubmit = (e) => {
+  const handleSignupSubmit = async (e) => {
     e.preventDefault();
-    setAuthState('success');
+    setAuthError('');
+    setAuthLoadingBtn(true);
+    try {
+      await register(signupForm.name, signupForm.email, signupForm.phone, signupForm.password);
+      setAuthState('success');
+    } catch (err) {
+      setAuthError(err.message || 'Đăng ký thất bại.');
+    } finally {
+      setAuthLoadingBtn(false);
+    }
   };
 
-  const handleSaveProfile = (e) => {
+  const handleSaveProfile = async (e) => {
     e.preventDefault();
-    updateProfile(editProfileForm);
-    setAuthState('dashboard');
+    setAuthError('');
+    setAuthLoadingBtn(true);
+    try {
+      await updateProfile(editProfileForm);
+      setAuthState('dashboard');
+    } catch (err) {
+      setAuthError(err.message || 'Cập nhật thất bại.');
+    } finally {
+      setAuthLoadingBtn(false);
+    }
   };
+
+  if (authLoading) {
+    return (
+      <main>
+        <section className="account-main-section" style={{ minHeight: '60vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <p style={{ color: '#74575C', fontSize: 16 }}>Đang kiểm tra phiên đăng nhập...</p>
+        </section>
+      </main>
+    );
+  }
 
   // DASHBOARD VIEW (WHEN LOGGED IN AND NOT EDITING PROFILE)
   if (isLoggedIn && authState !== 'profile_edit') {
@@ -144,13 +217,13 @@ export default function AccountPage() {
                 <div className="loyalty-card">
                   <h3 className="loyalty-title">Ưu đãi của bạn</h3>
                   <p className="loyalty-desc">
-                    Bạn có <strong>250 điểm</strong> tích lũy. Đổi 500 điểm để nhận ngay 1 hộp Donut Classic!
+                    Bạn có <strong>{userProfile.points || 0} điểm</strong> tích lũy. Đổi 500 điểm để nhận ngay 1 hộp Donut Classic!
                   </p>
                   <div className="loyalty-progress-track" aria-hidden="true">
-                    <div className="loyalty-progress-bar" style={{ width: '50%' }}></div>
+                    <div className="loyalty-progress-bar" style={{ width: `${Math.min(100, ((userProfile.points || 0) / 500) * 100)}%` }}></div>
                   </div>
                   <div className="loyalty-milestones">
-                    <span>250 điểm</span>
+                    <span>{userProfile.points || 0} điểm</span>
                     <span>500 điểm</span>
                   </div>
                 </div>
@@ -165,7 +238,7 @@ export default function AccountPage() {
                       <img src="/assets/icon-order-history.svg" alt="" className="orders-title-icon" width="20" height="20" />
                       <h2 className="orders-title">Lịch sử mua hàng</h2>
                     </div>
-                    <span className="orders-count-pill">{orders.length > 0 ? `${orders.length} Đơn hàng` : '3 Đơn hàng gần đây'}</span>
+                    <span className="orders-count-pill">{orders.length > 0 ? `${orders.length} Đơn hàng` : 'Chưa có đơn hàng'}</span>
                   </div>
 
                   <div className="orders-table-responsive">
@@ -182,18 +255,18 @@ export default function AccountPage() {
                       <tbody>
                         {orders.length > 0 ? (
                           orders.map((o, i) => (
-                            <tr key={i}>
-                              <td className="order-code">#{o.orderId}</td>
-                              <td className="order-date">{o.date}</td>
-                              <td className="order-total text-right">{o.total}</td>
+                            <tr key={o.id || i}>
+                              <td className="order-code">#{o.order_code}</td>
+                              <td className="order-date">{new Date(o.created_at).toLocaleDateString('vi-VN')}</td>
+                              <td className="order-total text-right">{o.total?.toLocaleString('vi-VN')}đ</td>
                               <td>
-                                <span className="order-status-badge status-delivered">
+                                <span className={`order-status-badge ${o.status === 'Đã giao thành công' ? 'status-delivered' : 'status-processing'}`}>
                                   <span className="status-dot"></span>
                                   {o.status}
                                 </span>
                               </td>
                               <td>
-                                <Link href={`/order-detail?orderId=${o.orderId}`} className="order-action-link">
+                                <Link href={`/order-detail?orderId=${o.order_code}`} className="order-action-link">
                                   <span>Chi tiết</span>
                                   <img src="/assets/icon-arrow-right-mini.svg" alt="" className="action-arrow" />
                                 </Link>
@@ -201,59 +274,11 @@ export default function AccountPage() {
                             </tr>
                           ))
                         ) : (
-                          <>
-                            <tr>
-                              <td className="order-code">#DS-8829410</td>
-                              <td className="order-date">24/05/2024</td>
-                              <td className="order-total text-right">320.000đ</td>
-                              <td>
-                                <span className="order-status-badge status-delivered">
-                                  <span className="status-dot"></span>
-                                  Đã giao
-                                </span>
-                              </td>
-                              <td>
-                                <Link href="/order-detail?orderId=DS-8829410" className="order-action-link">
-                                  <span>Chi tiết</span>
-                                  <img src="/assets/icon-arrow-right-mini.svg" alt="" className="action-arrow" />
-                                </Link>
-                              </td>
-                            </tr>
-                            <tr>
-                              <td className="order-code">#DS-8829152</td>
-                              <td className="order-date">18/05/2024</td>
-                              <td className="order-total text-right">155.000đ</td>
-                              <td>
-                                <span className="order-status-badge status-delivered">
-                                  <span className="status-dot"></span>
-                                  Đã giao
-                                </span>
-                              </td>
-                              <td>
-                                <Link href="/order-detail?orderId=DS-8829152" className="order-action-link">
-                                  <span>Chi tiết</span>
-                                  <img src="/assets/icon-arrow-right-mini.svg" alt="" className="action-arrow" />
-                                </Link>
-                              </td>
-                            </tr>
-                            <tr>
-                              <td className="order-code">#DS-8828904</td>
-                              <td className="order-date">12/05/2024</td>
-                              <td className="order-total text-right">540.000đ</td>
-                              <td>
-                                <span className="order-status-badge status-processing">
-                                  <span className="status-dot"></span>
-                                  Đang xử lý
-                                </span>
-                              </td>
-                              <td>
-                                <Link href="/order-detail?orderId=DS-8828904" className="order-action-link">
-                                  <span>Chi tiết</span>
-                                  <img src="/assets/icon-arrow-right-mini.svg" alt="" className="action-arrow" />
-                                </Link>
-                              </td>
-                            </tr>
-                          </>
+                          <tr>
+                            <td colSpan="5" style={{ textAlign: 'center', padding: '24px', color: '#74575C' }}>
+                              Bạn chưa có đơn hàng nào. Hãy khám phá menu và đặt hàng ngay!
+                            </td>
+                          </tr>
                         )}
                       </tbody>
                     </table>
@@ -415,6 +440,12 @@ export default function AccountPage() {
               </header>
 
               <form className="login-form" id="loginForm" onSubmit={handleLoginSubmit}>
+                {authError && (
+                  <div style={{ color: '#d9534f', background: '#fdf7f7', border: '1px solid #eed3d7', borderRadius: 8, padding: '10px 14px', marginBottom: 16, fontSize: 13, fontWeight: 500 }}>
+                    ⚠️ {authError}
+                  </div>
+                )}
+
                 <div className="login-form-group">
                   <label htmlFor="loginEmail" className="login-label">Địa chỉ Email</label>
                   <input type="email" id="loginEmail" className="login-input" placeholder="ten@vidu.com" value={loginEmail} onChange={(e) => setLoginEmail(e.target.value)} required />
@@ -423,7 +454,7 @@ export default function AccountPage() {
                 <div className="login-form-group">
                   <div className="login-label-row">
                     <label htmlFor="loginPassword" className="login-label">Mật khẩu</label>
-                    <button type="button" className="login-forgot-link" id="forgotPasswordLink" onClick={() => setAuthState('forgot')} style={{ background: 'none', border: 'none', cursor: 'pointer' }}>Quên mật khẩu?</button>
+                    <button type="button" className="login-forgot-link" id="forgotPasswordLink" onClick={() => { setAuthError(''); setAuthState('forgot'); }} style={{ background: 'none', border: 'none', cursor: 'pointer' }}>Quên mật khẩu?</button>
                   </div>
                   <input type="password" id="loginPassword" className="login-input" placeholder="••••••••" value={loginPassword} onChange={(e) => setLoginPassword(e.target.value)} required />
                 </div>
@@ -436,8 +467,8 @@ export default function AccountPage() {
                   </label>
                 </div>
 
-                <button type="submit" className="btn-login-submit" id="btnLoginSubmit">
-                  <span>Đăng Nhập</span>
+                <button type="submit" disabled={authLoadingBtn} className="btn-login-submit" id="btnLoginSubmit">
+                  <span>{authLoadingBtn ? 'Đang đăng nhập...' : 'Đăng Nhập'}</span>
                 </button>
               </form>
 
@@ -495,13 +526,19 @@ export default function AccountPage() {
               </header>
 
               <form className="forgot-form" id="forgotForm" onSubmit={handleForgotSubmit}>
+                {authError && (
+                  <div style={{ color: '#d9534f', background: '#fdf7f7', border: '1px solid #eed3d7', borderRadius: 8, padding: '10px 14px', marginBottom: 16, fontSize: 13, fontWeight: 500 }}>
+                    ⚠️ {authError}
+                  </div>
+                )}
+
                 <div className="login-form-group">
                   <label htmlFor="forgotEmail" className="forgot-label">Địa chỉ Email của bạn</label>
                   <input type="email" id="forgotEmail" className="forgot-input" placeholder="donutsaigon@gmail.com" value={forgotEmail} onChange={(e) => setForgotEmail(e.target.value)} required />
                 </div>
 
-                <button type="submit" className="btn-forgot-submit" id="btnForgotSubmit">
-                  <span>Tiếp tục</span>
+                <button type="submit" disabled={authLoadingBtn} className="btn-forgot-submit" id="btnForgotSubmit">
+                  <span>{authLoadingBtn ? 'Đang gửi OTP qua Resend...' : 'Tiếp tục'}</span>
                 </button>
               </form>
             </div>
@@ -526,7 +563,7 @@ export default function AccountPage() {
           <div className="login-card-container">
             <div className="login-card otp-card">
               <div className="forgot-back-wrap">
-                <button type="button" className="btn-forgot-back" id="btnOtpBack" aria-label="Quay lại bước trước" onClick={() => setAuthState('forgot')}>
+                <button type="button" className="btn-forgot-back" id="btnOtpBack" aria-label="Quay lại bước trước" onClick={() => { setAuthError(''); setAuthState('forgot'); }}>
                   <img src="/assets/icon-arrow-back-blue.svg" alt="" width="18" height="18" />
                 </button>
               </div>
@@ -539,6 +576,19 @@ export default function AccountPage() {
               </header>
 
               <form className="otp-form" id="otpForm" onSubmit={handleOtpSubmit}>
+                {testOtpHint && (
+                  <div style={{ color: '#004691', background: '#eef5ff', border: '1px solid #c2dbfe', borderRadius: 8, padding: '10px 14px', marginBottom: 16, fontSize: 13, textAlign: 'center', fontWeight: 500 }}>
+                    🔑 Mã OTP (Thử nghiệm): <strong style={{ letterSpacing: 2, fontSize: 15 }}>{testOtpHint}</strong>
+                    <div style={{ fontSize: 11, color: '#666', marginTop: 4 }}>Đã tự động điền vào 5 ô bên dưới</div>
+                  </div>
+                )}
+
+                {authError && (
+                  <div style={{ color: '#d9534f', background: '#fdf7f7', border: '1px solid #eed3d7', borderRadius: 8, padding: '10px 14px', marginBottom: 16, fontSize: 13, fontWeight: 500 }}>
+                    ⚠️ {authError}
+                  </div>
+                )}
+
                 <div className="otp-boxes-row">
                   {otpValues.map((val, idx) => (
                     <input
@@ -555,8 +605,8 @@ export default function AccountPage() {
                   ))}
                 </div>
 
-                <button type="submit" className="btn-forgot-submit" id="btnOtpSubmit">
-                  <span>Tiếp tục</span>
+                <button type="submit" disabled={authLoadingBtn} className="btn-forgot-submit" id="btnOtpSubmit">
+                  <span>{authLoadingBtn ? 'Đang xác thực...' : 'Tiếp tục'}</span>
                 </button>
 
                 <div className="otp-resend-row">
@@ -596,11 +646,25 @@ export default function AccountPage() {
                 </header>
 
                 <form className="signup-form" id="signupForm" onSubmit={handleSignupSubmit}>
+                  {authError && (
+                    <div style={{ color: '#d9534f', background: '#fdf7f7', border: '1px solid #eed3d7', borderRadius: 8, padding: '10px 14px', marginBottom: 16, fontSize: 13, fontWeight: 500 }}>
+                      ⚠️ {authError}
+                    </div>
+                  )}
+
                   <div className="signup-form-group">
                     <label htmlFor="signupName" className="signup-label">Họ và tên</label>
                     <div className="signup-input-wrap">
                       <img src="/assets/icon-signup-user.svg" alt="" className="input-icon-left" width="16" height="16" />
-                      <input type="text" id="signupName" className="signup-input" placeholder="Nguyen Van A" required />
+                      <input
+                        type="text"
+                        id="signupName"
+                        className="signup-input"
+                        placeholder="Nguyen Van A"
+                        value={signupForm.name}
+                        onChange={(e) => setSignupForm({ ...signupForm, name: e.target.value })}
+                        required
+                      />
                     </div>
                   </div>
 
@@ -608,7 +672,15 @@ export default function AccountPage() {
                     <label htmlFor="signupEmail" className="signup-label">Email</label>
                     <div className="signup-input-wrap">
                       <img src="/assets/icon-signup-email.svg" alt="" className="input-icon-left" width="18" height="16" />
-                      <input type="email" id="signupEmail" className="signup-input" placeholder="vi-du@email.com" required />
+                      <input
+                        type="email"
+                        id="signupEmail"
+                        className="signup-input"
+                        placeholder="vi-du@email.com"
+                        value={signupForm.email}
+                        onChange={(e) => setSignupForm({ ...signupForm, email: e.target.value })}
+                        required
+                      />
                     </div>
                   </div>
 
@@ -616,7 +688,15 @@ export default function AccountPage() {
                     <label htmlFor="signupPhone" className="signup-label">Số điện thoại</label>
                     <div className="signup-input-wrap">
                       <img src="/assets/icon-signup-phone.svg" alt="" className="input-icon-left" width="16" height="16" />
-                      <input type="tel" id="signupPhone" className="signup-input" placeholder="0912 345 678" required />
+                      <input
+                        type="tel"
+                        id="signupPhone"
+                        className="signup-input"
+                        placeholder="0912 345 678"
+                        value={signupForm.phone}
+                        onChange={(e) => setSignupForm({ ...signupForm, phone: e.target.value })}
+                        required
+                      />
                     </div>
                   </div>
 
@@ -624,10 +704,15 @@ export default function AccountPage() {
                     <label htmlFor="signupPassword" className="signup-label">Mật khẩu</label>
                     <div className="signup-input-wrap">
                       <img src="/assets/icon-signup-lock.svg" alt="" className="input-icon-left" width="16" height="18" />
-                      <input type="password" id="signupPassword" className="signup-input" placeholder="••••••••" required />
-                      <button type="button" className="btn-toggle-pwd" id="btnToggleSignupPwd" aria-label="Hiện/ẩn mật khẩu">
-                        <img src="/assets/icon-eye-toggle.svg" alt="" width="20" height="14" />
-                      </button>
+                      <input
+                        type="password"
+                        id="signupPassword"
+                        className="signup-input"
+                        placeholder="•••••••• (tối thiểu 6 ký tự)"
+                        value={signupForm.password}
+                        onChange={(e) => setSignupForm({ ...signupForm, password: e.target.value })}
+                        required
+                      />
                     </div>
                   </div>
 
@@ -641,8 +726,8 @@ export default function AccountPage() {
                     </label>
                   </div>
 
-                  <button type="submit" className="btn-signup-submit" id="btnSignupSubmit">
-                    <span>Đăng ký ngay</span>
+                  <button type="submit" disabled={authLoadingBtn} className="btn-signup-submit" id="btnSignupSubmit">
+                    <span>{authLoadingBtn ? 'Đang tạo tài khoản...' : 'Đăng ký ngay'}</span>
                   </button>
                 </form>
 

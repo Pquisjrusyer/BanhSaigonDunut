@@ -8,23 +8,23 @@ import { useAuth } from '../../context/AuthContext';
 
 export default function CartPage() {
   const router = useRouter();
-  const { cartItems, updateQty, removeFromCart, clearCart, appliedVoucher } = useCart();
-  const { addOrder, userProfile } = useAuth();
+  const { cartItems, updateQty, removeFromCart, clearCart, appliedVoucher, discountAmount } = useCart();
+  const { userProfile, isLoggedIn, refreshOrders } = useAuth();
 
   const [currentStep, setCurrentStep] = useState(2); // 2: Review, 3: Shipping & Payment
   const [paymentMethod, setPaymentMethod] = useState('wallet');
+  const [orderLoading, setOrderLoading] = useState(false);
   const [formData, setFormData] = useState({
-    name: userProfile.name || 'Nguyễn Văn A',
-    phone: userProfile.phone || '0901 234 567',
-    email: userProfile.email || 'email@example.com',
-    address: userProfile.address || '123 Nguyễn Huệ, Phường Bến Nghé',
-    district: 'Quận 1',
+    name: userProfile.name || '',
+    phone: userProfile.phone || '',
+    email: userProfile.email || '',
+    address: userProfile.address || '',
+    district: userProfile.district || 'Quận 1',
     note: '',
   });
 
   const subtotal = cartItems.reduce((sum, item) => sum + item.price * (item.qty || 1), 0);
   const shippingFee = subtotal >= 200000 || subtotal === 0 ? 0 : 25000;
-  const discountAmount = appliedVoucher === 'DONUT5' ? 5000 : 0;
   const finalTotal = Math.max(0, subtotal + shippingFee - discountAmount);
 
   const handleFormChange = (e) => {
@@ -41,27 +41,56 @@ export default function CartPage() {
     setFormData((prev) => ({ ...prev, [fieldName]: value }));
   };
 
-  const handleCompleteOrder = () => {
+  const handleCompleteOrder = async () => {
     if (!formData.name || !formData.phone || !formData.address) {
       alert('Vui lòng điền đầy đủ Họ tên, Số điện thoại và Địa chỉ giao hàng!');
       return;
     }
 
-    const orderId = 'DS-' + Math.floor(1000000 + Math.random() * 9000000);
-    const newOrder = {
-      orderId,
-      date: new Date().toLocaleDateString('vi-VN'),
-      items: [...cartItems],
-      total: `${finalTotal.toLocaleString('vi-VN')} VNĐ`,
-      shippingInfo: { fullName: formData.name, phone: formData.phone, address: `${formData.address}, ${formData.district}` },
-      paymentMethod: paymentMethod === 'wallet' ? 'Ví MoMo / ZaloPay' : paymentMethod === 'cod' ? 'COD' : 'Thẻ ATM / Visa',
-      status: 'Đang xử lý',
-    };
+    if (!isLoggedIn) {
+      alert('Vui lòng đăng nhập để đặt hàng!');
+      router.push('/account');
+      return;
+    }
 
-    addOrder(newOrder);
-    clearCart();
-    router.push(`/order-success?orderId=${orderId}`);
+    setOrderLoading(true);
+    try {
+      const res = await fetch('/api/orders', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          items: cartItems,
+          customerName: formData.name,
+          customerPhone: formData.phone,
+          customerEmail: formData.email,
+          shippingAddress: `${formData.address}, ${formData.district}`,
+          district: formData.district,
+          note: formData.note,
+          paymentMethod,
+          subtotal,
+          shippingFee,
+          discountAmount,
+          voucherCode: appliedVoucher,
+          total: finalTotal,
+        }),
+      });
+      const data = await res.json();
+
+      if (!res.ok || !data.success) {
+        alert(data.error || 'Không thể tạo đơn hàng. Vui lòng thử lại.');
+        return;
+      }
+
+      clearCart();
+      await refreshOrders();
+      router.push(`/order-success?orderId=${data.orderId}`);
+    } catch (err) {
+      alert('Lỗi hệ thống. Vui lòng thử lại.');
+    } finally {
+      setOrderLoading(false);
+    }
   };
+
 
   return (
     <main>

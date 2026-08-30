@@ -1,26 +1,58 @@
 'use client';
 
-import React, { Suspense } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
-import { useAuth } from '../../context/AuthContext';
 
 function OrderDetailContent() {
   const searchParams = useSearchParams();
-  const orderIdParam = searchParams.get('orderId') || 'DS-8829410';
-  const { orders } = useAuth();
+  const orderIdParam = searchParams.get('orderId') || '';
+  const [currentOrder, setCurrentOrder] = useState(null);
+  const [loading, setLoading] = useState(true);
 
-  const currentOrder = orders.find((o) => o.orderId === orderIdParam) || {
-    orderId: orderIdParam,
-    date: '24/05/2024',
-    total: '320.000đ',
-    subtotal: '320.000đ',
-    shipping: '15.000đ',
-    status: 'Shipper đang trên đường tới bạn',
-    items: [
-      { id: 'very-berry', name: 'VERY BERRY', price: 180000, qty: 2, img: '/assets/thumb-very-berry.png' },
-    ],
-  };
+  useEffect(() => {
+    if (!orderIdParam) {
+      setLoading(false);
+      return;
+    }
+    const fetchOrder = async () => {
+      try {
+        const res = await fetch(`/api/orders/${orderIdParam}`);
+        if (res.ok) {
+          const data = await res.json();
+          if (data.success && data.order) {
+            setCurrentOrder(data.order);
+          }
+        }
+      } catch (e) {
+        console.error('Fetch order error:', e);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchOrder();
+  }, [orderIdParam]);
+
+  if (loading) {
+    return (
+      <main>
+        <section className="order-detail-section" style={{ minHeight: '60vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <p style={{ color: '#74575C' }}>Đang tải thông tin đơn hàng...</p>
+        </section>
+      </main>
+    );
+  }
+
+  if (!currentOrder) {
+    return (
+      <main>
+        <section className="order-detail-section" style={{ minHeight: '60vh', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 16 }}>
+          <p style={{ color: '#74575C', fontSize: 18 }}>Không tìm thấy đơn hàng.</p>
+          <Link href="/account" style={{ color: '#004691', fontWeight: 'bold' }}>← Quay lại tài khoản</Link>
+        </section>
+      </main>
+    );
+  }
 
   return (
     <main>
@@ -41,7 +73,7 @@ function OrderDetailContent() {
               {/* Order Header */}
               <div className="tracking-header">
                 <h1 className="tracking-title">Theo dõi đơn hàng</h1>
-                <p className="tracking-code" id="orderDetailCode">Mã đơn hàng: #{currentOrder.orderId}</p>
+                <p className="tracking-code" id="orderDetailCode">Mã đơn hàng: #{currentOrder.order_code}</p>
               </div>
 
               {/* Current Status Box */}
@@ -133,16 +165,16 @@ function OrderDetailContent() {
                 <h3 className="summary-card-title">Tóm tắt đơn hàng</h3>
 
                 <div className="order-items-list" id="orderSummaryItems">
-                  {currentOrder.items?.map((item, idx) => (
+                  {currentOrder.order_items?.map((item, idx) => (
                     <div key={idx} className="order-item-row">
                       <div className="item-thumb-box">
-                        <img src={item.img || '/assets/thumb-very-berry.png'} alt={item.name} className="item-thumb-img" />
+                        <img src={item.product_image || '/assets/thumb-very-berry.png'} alt={item.product_name} className="item-thumb-img" />
                       </div>
                       <div className="item-details">
-                        <h4 className="item-name">{item.name}</h4>
-                        <span className="item-qty">Số lượng: {item.qty}</span>
+                        <h4 className="item-name">{item.product_name}</h4>
+                        <span className="item-qty">Số lượng: {item.quantity}</span>
                       </div>
-                      <div className="item-total-price">{(item.price * item.qty).toLocaleString('vi-VN')}đ</div>
+                      <div className="item-total-price">{(item.product_price * item.quantity).toLocaleString('vi-VN')}đ</div>
                     </div>
                   ))}
                 </div>
@@ -150,15 +182,21 @@ function OrderDetailContent() {
                 <div className="order-financial-breakdown">
                   <div className="breakdown-line">
                     <span className="line-label">Tạm tính</span>
-                    <span className="line-val" id="orderSubtotalVal">{currentOrder.subtotal || currentOrder.total}</span>
+                    <span className="line-val" id="orderSubtotalVal">{currentOrder.subtotal?.toLocaleString('vi-VN')}đ</span>
                   </div>
                   <div className="breakdown-line">
                     <span className="line-label">Phí giao hàng</span>
-                    <span className="line-val" id="orderShippingVal">{currentOrder.shipping || '15.000đ'}</span>
+                    <span className="line-val" id="orderShippingVal">{currentOrder.shipping_fee?.toLocaleString('vi-VN')}đ</span>
                   </div>
+                  {currentOrder.discount_amount > 0 && (
+                    <div className="breakdown-line">
+                      <span className="line-label">Giảm giá ({currentOrder.voucher_code})</span>
+                      <span className="line-val" style={{ color: '#28a745' }}>-{currentOrder.discount_amount?.toLocaleString('vi-VN')}đ</span>
+                    </div>
+                  )}
                   <div className="breakdown-total-row">
                     <span className="total-label">Tổng cộng</span>
-                    <span className="total-val" id="orderTotalVal">{currentOrder.total}</span>
+                    <span className="total-val" id="orderTotalVal">{currentOrder.total?.toLocaleString('vi-VN')}đ</span>
                   </div>
                 </div>
               </div>
