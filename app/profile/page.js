@@ -1,22 +1,63 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useAuth } from '../../context/AuthContext';
 
 export default function ProfilePage() {
-  const { userProfile, updateProfile } = useAuth();
+  const { userProfile, updateProfile, isLoggedIn, authLoading } = useAuth();
+  const router = useRouter();
+  const [saving, setSaving] = useState(false);
   const [formData, setFormData] = useState({
-    name: userProfile.name,
-    email: userProfile.email,
-    phone: userProfile.phone,
-    address: userProfile.address,
+    name: userProfile.name || '',
+    email: userProfile.email || '',
+    phone: userProfile.phone || '',
+    address: userProfile.address || '',
+    district: userProfile.district || '',
   });
 
-  const handleSubmit = (e) => {
+  useEffect(() => {
+    if (userProfile) {
+      setFormData({
+        name: userProfile.name || '',
+        email: userProfile.email || '',
+        phone: userProfile.phone || '',
+        address: userProfile.address || '',
+        district: userProfile.district || '',
+      });
+    }
+  }, [userProfile]);
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    updateProfile(formData);
+    setSaving(true);
+    try {
+      await updateProfile(formData);
+      router.push('/account');
+    } catch (err) {
+      alert(err.message || 'Cập nhật thất bại.');
+    } finally {
+      setSaving(false);
+    }
   };
+
+  if (authLoading) {
+    return (
+      <main className="account-main-section" style={{ minHeight: '60vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <p style={{ color: '#74575C' }}>Đang tải thông tin hồ sơ...</p>
+      </main>
+    );
+  }
+
+  if (!isLoggedIn) {
+    return (
+      <main className="account-main-section" style={{ minHeight: '60vh', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 16 }}>
+        <p style={{ color: '#74575C', fontSize: 18 }}>Vui lòng đăng nhập để xem hồ sơ cá nhân.</p>
+        <Link href="/account" style={{ color: '#004691', fontWeight: 'bold' }}>→ Đến trang Đăng nhập</Link>
+      </main>
+    );
+  }
 
   return (
     <main className="account-main-section">
@@ -46,10 +87,10 @@ export default function ProfilePage() {
             <label className="forgot-label">Địa chỉ Email</label>
             <input
               type="email"
-              required
+              disabled
               className="forgot-input"
+              style={{ background: '#f5f5f5', cursor: 'not-allowed' }}
               value={formData.email}
-              onChange={(e) => setFormData({ ...formData, email: e.target.value })}
             />
           </div>
 
@@ -65,7 +106,7 @@ export default function ProfilePage() {
           </div>
 
           <div className="login-form-group">
-            <label className="forgot-label">Địa chỉ giao bánh mặc định</label>
+            <label className="forgot-label">Địa chỉ giao bánh</label>
             <textarea
               className="forgot-input"
               rows="3"
@@ -75,8 +116,19 @@ export default function ProfilePage() {
             />
           </div>
 
-          <button type="submit" className="btn-primary-lg" style={{ width: '100%', marginTop: 16 }}>
-            <span>Lưu Thông Tin Hồ Sơ</span>
+          <div className="login-form-group">
+            <label className="forgot-label">Quận / Huyện</label>
+            <input
+              type="text"
+              className="forgot-input"
+              value={formData.district}
+              onChange={(e) => setFormData({ ...formData, district: e.target.value })}
+              placeholder="VD: Quận 1, TP. Hồ Chí Minh"
+            />
+          </div>
+
+          <button type="submit" disabled={saving} className="btn-primary-lg" style={{ width: '100%', marginTop: 16 }}>
+            <span>{saving ? 'Đang lưu...' : 'Lưu Thông Tin Hồ Sơ'}</span>
           </button>
         </form>
       </div>

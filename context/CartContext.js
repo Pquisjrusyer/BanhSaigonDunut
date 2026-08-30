@@ -9,6 +9,7 @@ export function CartProvider({ children }) {
   const [cartItems, setCartItems] = useState([]);
   const [cartCount, setCartCount] = useState(0);
   const [appliedVoucher, setAppliedVoucher] = useState('');
+  const [discountAmount, setDiscountAmount] = useState(0);
   const { showToast } = useToast();
 
   // Load cart from localStorage on mount
@@ -22,6 +23,8 @@ export function CartProvider({ children }) {
       }
       const voucher = localStorage.getItem('dnsg_applied_voucher') || '';
       setAppliedVoucher(voucher);
+      const discount = parseInt(localStorage.getItem('dnsg_discount_amount') || '0', 10);
+      setDiscountAmount(discount);
     } catch (e) {
       console.error('Failed to load cart from localStorage:', e);
     }
@@ -86,23 +89,40 @@ export function CartProvider({ children }) {
 
   const clearCart = useCallback(() => {
     saveCart([]);
+    setAppliedVoucher('');
+    setDiscountAmount(0);
     try {
       localStorage.removeItem('ds_cart_items');
       localStorage.setItem('ds_cart_count', '0');
+      localStorage.removeItem('dnsg_applied_voucher');
+      localStorage.removeItem('dnsg_discount_amount');
     } catch (e) {}
   }, [saveCart]);
 
-  const applyVoucher = useCallback((code) => {
-    const formatted = code.trim().toUpperCase();
-    if (formatted === 'DONUT5') {
-      setAppliedVoucher('DONUT5');
+  const applyVoucher = useCallback(async (code, subtotal) => {
+    try {
+      const res = await fetch('/api/vouchers/validate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code, subtotal }),
+      });
+      const data = await res.json();
+
+      if (!res.ok || !data.success) {
+        showToast(data.error || 'Mã ưu đãi không hợp lệ!', '❌');
+        return false;
+      }
+
+      setAppliedVoucher(data.voucher.code);
+      setDiscountAmount(data.voucher.discountAmount);
       try {
-        localStorage.setItem('dnsg_applied_voucher', 'DONUT5');
+        localStorage.setItem('dnsg_applied_voucher', data.voucher.code);
+        localStorage.setItem('dnsg_discount_amount', data.voucher.discountAmount.toString());
       } catch (e) {}
-      showToast('Áp dụng mã DONUT5 thành công! Giảm 5.000đ', '🎉');
+      showToast(data.message, '🎉');
       return true;
-    } else {
-      showToast('Mã ưu đãi không hợp lệ!', '❌');
+    } catch (err) {
+      showToast('Lỗi khi kiểm tra mã ưu đãi. Vui lòng thử lại.', '❌');
       return false;
     }
   }, [showToast]);
@@ -117,6 +137,7 @@ export function CartProvider({ children }) {
         removeFromCart,
         clearCart,
         appliedVoucher,
+        discountAmount,
         applyVoucher,
       }}
     >
