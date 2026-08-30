@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server';
 import supabase from '../../../../lib/supabase';
 import { setAuthCookie } from '../../../../lib/auth';
 
+export const dynamic = 'force-dynamic';
+
 export async function POST(request) {
   try {
     const { email, code } = await request.json();
