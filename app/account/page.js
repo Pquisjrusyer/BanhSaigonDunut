@@ -41,7 +41,8 @@ export default function AccountPage() {
   const handleSocialLogin = (provider) => {
     setAuthError('');
     setAuthLoadingBtn(true);
-    window.location.href = `/api/auth/oauth?provider=${provider}`;
+    const origin = typeof window !== 'undefined' ? window.location.origin : '';
+    window.location.href = `/api/auth/oauth?provider=${provider}&redirect_to=${encodeURIComponent(origin + '/account')}`;
   };
 
   React.useEffect(() => {
