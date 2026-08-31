@@ -2158,6 +2158,7 @@ body.account-page:not(.dashboard-mode) donut-footer {
 .blob-right {
   right: -80px;
   bottom: 20%;
+  z-index: 0;
 }
 
 .login-card-container {
@@ -2735,7 +2736,7 @@ body.account-page:not(.dashboard-mode) donut-footer {
   position: relative;
   z-index: 1;
   width: 100%;
-  max-width: 960px;
+  max-width: 1000px;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -2749,27 +2750,86 @@ body.account-page:not(.dashboard-mode) donut-footer {
   box-shadow: 0 12px 32px rgba(41, 94, 172, 0.08);
   display: flex;
   overflow: hidden;
-  min-height: 640px;
+  min-height: 680px;
 }
 
 .signup-left-col {
   flex: 1.05;
-  min-width: 380px;
+  min-width: 420px;
   position: relative;
-  background: #FEF3F5;
+  background-color: #FEF3F5;
+  background-image: url('/assets/signup-brand-banner.png');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
   display: flex;
-  align-items: stretch;
-  justify-content: center;
+  flex-direction: column;
+  justify-content: flex-start;
   overflow: hidden;
   border-right: 1px solid rgba(195, 198, 211, 0.25);
+  padding: 64px 36px 40px;
 }
 
-.signup-banner-img {
+.signup-visual-bg-img {
+  position: absolute;
+  top: 0;
+  left: 0;
   width: 100%;
   height: 100%;
   object-fit: cover;
   object-position: center;
-  display: block;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.signup-visual-content-wrap {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  max-width: 340px;
+}
+
+.signup-visual-badge-wrap {
+  display: flex;
+}
+
+.signup-visual-badge {
+  background-color: #F2A1AE;
+  color: #FEFBFB;
+  font-family: var(--font-family-base);
+  font-size: 12px;
+  font-weight: 600;
+  padding: 4px 14px;
+  border-radius: 9999px;
+  display: inline-block;
+  letter-spacing: 0.6px;
+  line-height: 16px;
+  width: fit-content;
+}
+
+.signup-visual-heading {
+  font-family: var(--font-family-display);
+  font-size: 46px;
+  font-weight: 900;
+  line-height: 54px;
+  letter-spacing: -0.96px;
+  color: #2D61AD;
+  margin: 0;
+}
+
+.signup-visual-desc-wrap {
+  max-width: 320px;
+}
+
+.signup-visual-desc {
+  font-family: var(--font-family-base);
+  font-size: 16px;
+  line-height: 28px;
+  color: #424751;
+  font-weight: 500;
+  margin: 0;
 }
 
 .signup-right-col {
@@ -3108,6 +3168,7 @@ body.account-page:not(.dashboard-mode) donut-footer {
   flex-direction: column;
   justify-content: center;
   background-color: #FFFFFF;
+  z-index: 2;
 }
 
 .profile-form-header {
@@ -6642,7 +6703,7 @@ body.account-page:not(.dashboard-mode) donut-footer {
 
 /* Commitments Bento Card (HDSD - Figma Node 2467:39370) */
 .detail-commitments-card {
-  background-color: #F8F5F0;
+  background-color: white;
   border-radius: 20px;
   padding: 32px 28px 36px;
   box-shadow: 0 6px 20px rgba(0, 0, 0, 0.03);
@@ -6707,7 +6768,7 @@ body.account-page:not(.dashboard-mode) donut-footer {
 }
 
 .detail-info-card {
-  background-color: #F8F5F0;
+  background-color: white;
   border-radius: 20px;
   padding: 36px 32px;
   display: flex;
@@ -6723,7 +6784,7 @@ body.account-page:not(.dashboard-mode) donut-footer {
 }
 
 .detail-info-card {
-  background-color: #F8F5F0;
+  background-color: white;
   border-radius: 20px;
   padding: 36px 44px;
   display: flex;
@@ -7157,7 +7218,7 @@ body.account-page:not(.dashboard-mode) donut-footer {
 
 .related-card-img-wrap {
   height: 220px;
-  background-color: #F8F5F0;
+  background-color: white;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -7957,6 +8018,415 @@ body.reviews-page main {
   }
 
   .reviews-sub-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   Related Products Section ("Sản phẩm khác" - Figma 2173:77803)
+   -------------------------------------------------------------------------- */
+.detail-related-section {
+  padding: 48px 0 80px;
+  background-color: transparent;
+}
+
+.related-section-title {
+  font-family: var(--font-family-display);
+  font-size: clamp(28px, 3.5vw, 40px);
+  font-weight: 900;
+  color: #2D61AD;
+  margin-bottom: 24px;
+}
+
+.related-products-carousel {
+  display: flex;
+  gap: 24px;
+  overflow-x: auto;
+  padding-bottom: 24px;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(45, 97, 173, 0.2) transparent;
+}
+
+.related-products-carousel::-webkit-scrollbar {
+  height: 6px;
+}
+
+.related-products-carousel::-webkit-scrollbar-thumb {
+  background: rgba(45, 97, 173, 0.2);
+  border-radius: 4px;
+}
+
+.related-product-card {
+  flex: 0 0 280px;
+  background-color: #FFFFFF;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.05);
+  border: 1px solid rgba(195, 198, 211, 0.3);
+  display: flex;
+  flex-direction: column;
+  transition: transform var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.related-product-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 24px rgba(45, 97, 173, 0.1);
+}
+
+.related-card-link {
+  display: block;
+  text-decoration: none;
+}
+
+.related-card-img-wrap {
+  height: 220px;
+  background-color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+
+.related-card-img-wrap img {
+  max-width: 90%;
+  max-height: 90%;
+  object-fit: contain;
+  transition: transform var(--transition-fast);
+}
+
+.related-product-card:hover .related-card-img-wrap img {
+  transform: scale(1.08);
+}
+
+.related-card-body {
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+.related-card-title-link {
+  text-decoration: none;
+}
+
+.related-card-title {
+  font-family: var(--font-family-display);
+  font-size: 20px;
+  font-weight: 900;
+  color: #1E1B18;
+  margin-bottom: 6px;
+  transition: color var(--transition-fast);
+}
+
+.related-card-title:hover {
+  color: #2D61AD;
+}
+
+.related-card-desc {
+  font-size: 14px;
+  color: #424751;
+  opacity: 0.85;
+  line-height: 1.5;
+  margin-bottom: 16px;
+  flex: 1;
+}
+
+.related-card-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: auto;
+}
+
+.related-card-price {
+  font-size: 18px;
+  font-weight: 700;
+  color: #004691;
+}
+
+.related-add-btn {
+  width: 42px;
+  height: 42px;
+  border-radius: 8px;
+  background-color: #004691;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all var(--transition-fast);
+}
+
+.related-add-btn:hover {
+  background-color: #2D61AD;
+  transform: scale(1.05);
+}
+
+/* --------------------------------------------------------------------------
+   Custom Box Modal (Gift Box - Tùy chỉnh đơn hàng hộp quà)
+   -------------------------------------------------------------------------- */
+.custom-box-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 10005;
+  background-color: rgba(24, 52, 93, 0.55);
+  backdrop-filter: blur(6px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity 0.3s ease, visibility 0.3s ease;
+}
+
+.custom-box-modal-backdrop.active {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+}
+
+.custom-box-modal-card {
+  width: 100%;
+  max-width: 960px;
+  max-height: 90vh;
+  background-color: #F8CDD4;
+  border: 1px solid #C4C7C7;
+  border-radius: 16px;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.25);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  animation: customBoxSlideUp 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes customBoxSlideUp {
+  from {
+    transform: translateY(28px) scale(0.96);
+    opacity: 0;
+  }
+
+  to {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+  }
+}
+
+.custom-box-header {
+  background-color: #FBE4E8;
+  border-bottom: 1px solid #F2A1AE;
+  padding: 22px 28px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.custom-box-title-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.custom-box-title {
+  font-family: var(--font-family-display);
+  font-size: 24px;
+  font-weight: 900;
+  color: #2D61AD;
+}
+
+.custom-box-subtitle {
+  font-size: 15px;
+  color: #74575C;
+}
+
+.custom-box-close-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: #FFFFFF;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  font-size: 16px;
+  color: #424751;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all var(--transition-fast);
+}
+
+.custom-box-close-btn:hover {
+  background-color: #F5ECE7;
+  color: #181818;
+}
+
+.custom-box-body {
+  padding: 24px 28px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.custom-cake-selection-card {
+  background-color: #FFFFFF;
+  border: 1px solid rgba(196, 199, 199, 0.4);
+  border-radius: 12px;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
+}
+
+.cake-selection-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.cake-selection-title {
+  font-family: var(--font-family-display);
+  font-size: 22px;
+  font-weight: 900;
+  color: #2D61AD;
+}
+
+.cake-selection-badge {
+  background-color: #EEEEEE;
+  color: #5E5E5E;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 4px 12px;
+  border-radius: 9999px;
+  letter-spacing: 0.04em;
+}
+
+.flavor-options-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px 20px;
+}
+
+.flavor-radio-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  cursor: pointer;
+  user-select: none;
+  padding: 6px 4px;
+  border-radius: 6px;
+  transition: background-color var(--transition-fast);
+}
+
+.flavor-radio-item:hover {
+  background-color: #F8F5F0;
+}
+
+.flavor-radio-input {
+  display: none;
+}
+
+.flavor-radio-custom {
+  width: 20px;
+  height: 20px;
+  border: 1.5px solid #18345D;
+  border-radius: 4px;
+  background-color: #FFFFFF;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: all var(--transition-fast);
+  position: relative;
+}
+
+.flavor-radio-input:checked+.flavor-radio-custom {
+  background-color: #2D61AD;
+  border-color: #2D61AD;
+}
+
+.flavor-radio-input:checked+.flavor-radio-custom::after {
+  content: "✓";
+  color: #FFFFFF;
+  font-size: 13px;
+  font-weight: bold;
+  line-height: 1;
+}
+
+.flavor-name {
+  font-size: 15px;
+  font-weight: 600;
+  color: #18345D;
+  white-space: nowrap;
+}
+
+.custom-cake-note-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.custom-cake-note-label {
+  font-size: 16px;
+  font-weight: 700;
+  color: #181818;
+}
+
+.custom-cake-note-textarea {
+  width: 100%;
+  height: 90px;
+  background-color: #FFFFFF;
+  border: 1px solid #C4C7C7;
+  border-radius: 8px;
+  padding: 14px 16px;
+  font-family: var(--font-family-base);
+  font-size: 15px;
+  color: #181818;
+  resize: vertical;
+  outline: none;
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.custom-cake-note-textarea:focus {
+  border-color: #2D61AD;
+  box-shadow: 0 0 0 3px rgba(45, 97, 173, 0.15);
+}
+
+.custom-box-footer {
+  background-color: #FBE4E8;
+  border-top: 1px solid #F2A1AE;
+  padding: 18px 28px;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.btn-custom-box-submit {
+  padding: 13px 32px;
+  background-color: #2D61AD;
+  color: #FFFFFF;
+  border: none;
+  border-radius: 8px;
+  font-family: var(--font-family-base);
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.btn-custom-box-submit:hover {
+  background-color: #004691;
+  transform: translateY(-1px);
+}
+
+@media (max-width: 768px) {
+  .flavor-options-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 480px) {
+  .flavor-options-grid {
     grid-template-columns: 1fr;
   }
 }

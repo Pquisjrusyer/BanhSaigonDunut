@@ -4,163 +4,205 @@ import React, { useState } from 'react';
 import { useCart } from '../context/CartContext';
 
 const FLAVORS = [
-  { id: 'glaze', name: 'Glaze Original', img: '/assets/cat-filled-donut.png' },
-  { id: 'oreomallow', name: 'Oreomallow', img: '/assets/cat-ring-donut.png' },
-  { id: 'smoker-white', name: 'Smoked White', img: '/assets/cat-filled-donut.png' },
-  { id: 'red-velvet', name: 'Red Velvet', img: '/assets/cat-ring-donut.png' },
-  { id: 'dark-cookie', name: 'Dark Cookie', img: '/assets/cat-filled-donut.png' },
-  { id: 'blackpink', name: 'Blackpink', img: '/assets/cat-ring-donut.png' },
+  'GLAZE',
+  'RED VELVET',
+  'FRUIT POP',
+  'OREOMALLOW',
+  'DARK COOKIE',
+  'MANGO TANGO',
+  'SMOKER WHITE',
+  'BLACKPINK',
+  'VERY BERRY',
 ];
 
-const BOX_PRICES = {
-  4: 120000,
-  6: 180000,
-  12: 340000,
-};
-
 export default function CustomBoxModal({ isOpen, onClose }) {
-  const [boxSize, setBoxSize] = useState(6);
-  const [selectedFlavors, setSelectedFlavors] = useState([]);
   const { addToCart } = useCart();
+
+  const [cake1, setCake1] = useState('GLAZE');
+  const [cake2, setCake2] = useState('OREOMALLOW');
+  const [cake3, setCake3] = useState('RED VELVET');
+  const [cake4, setCake4] = useState('VERY BERRY');
+  const [giftNote, setGiftNote] = useState('');
 
   if (!isOpen) return null;
 
-  const handleSelectFlavor = (flavor) => {
-    if (selectedFlavors.length < boxSize) {
-      setSelectedFlavors((prev) => [...prev, flavor]);
-    }
-  };
-
-  const handleRemoveFlavor = (index) => {
-    setSelectedFlavors((prev) => prev.filter((_, idx) => idx !== index));
-  };
-
-  const handleConfirmBox = () => {
-    if (selectedFlavors.length < boxSize) {
-      alert(`Vui lòng chọn đủ ${boxSize} bánh cho hộp quà!`);
-      return;
-    }
+  const handleConfirm = () => {
+    const selectedFlavors = [cake1, cake2, cake3, cake4];
+    const details = `4 bánh: ${selectedFlavors.join(', ')}${
+      giftNote.trim() ? ` | Thư: "${giftNote.trim()}"` : ''
+    }`;
 
     addToCart({
-      id: `custom-box-${boxSize}-${Date.now()}`,
-      name: `Hộp Quà Tự Chọn (${boxSize} Bánh)`,
-      price: BOX_PRICES[boxSize],
+      id: `gift-box-${Date.now()}`,
+      name: 'GIFT BOX (4 Bánh)',
+      price: 170000,
       img: '/assets/cat-gift-box.png',
       qty: 1,
-      details: selectedFlavors.map((f) => f.name).join(', '),
+      flavors: selectedFlavors,
+      note: giftNote.trim(),
+      details: details,
     });
 
-    setSelectedFlavors([]);
     onClose();
   };
 
   return (
-    <div className="policy-modal-overlay active" id="customBoxModal" style={{ zIndex: 9999 }}>
-      <div className="policy-modal-card" style={{ maxWidth: 700 }}>
-        <header className="policy-modal-header">
-          <h3 className="policy-modal-title">Tùy Biến Hộp Quà Donut Saigon</h3>
-          <button type="button" className="policy-modal-close" onClick={onClose}>&times;</button>
-        </header>
-
-        <div className="policy-modal-body">
-          <div style={{ marginBottom: 16 }}>
-            <p style={{ fontWeight: 'bold', marginBottom: 8, color: '#004691' }}>1. Chọn Cỡ Hộp Quà:</p>
-            <div style={{ display: 'flex', gap: 12 }}>
-              {[4, 6, 12].map((size) => (
-                <button
-                  key={size}
-                  type="button"
-                  onClick={() => {
-                    setBoxSize(size);
-                    setSelectedFlavors([]);
-                  }}
-                  style={{
-                    padding: '8px 16px',
-                    borderRadius: 20,
-                    border: '2px solid #2D61AD',
-                    background: boxSize === size ? '#2D61AD' : '#FFF',
-                    color: boxSize === size ? '#FFF' : '#2D61AD',
-                    fontWeight: 'bold',
-                    cursor: 'pointer',
-                  }}
-                >
-                  Hộp {size} bánh ({BOX_PRICES[size].toLocaleString('vi-VN')}đ)
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div style={{ marginBottom: 16 }}>
-            <p style={{ fontWeight: 'bold', marginBottom: 8, color: '#004691' }}>
-              2. Chọn Vị Bánh ({selectedFlavors.length} / {boxSize}):
+    <div
+      className="custom-box-modal-backdrop active"
+      id="customBoxModal"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="customBoxModalTitle"
+      onClick={(e) => {
+        if (e.target.id === 'customBoxModal') onClose();
+      }}
+    >
+      <div className="custom-box-modal-card">
+        {/* Modal Header */}
+        <div className="custom-box-header">
+          <div className="custom-box-title-wrap">
+            <h2 className="custom-box-title" id="customBoxModalTitle">
+              Tùy chỉnh đơn hàng
+            </h2>
+            <p className="custom-box-subtitle">
+              Chọn hương vị cho từng chiếc bánh trong hộp của bạn.
             </p>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10 }}>
+          </div>
+          <button
+            type="button"
+            className="custom-box-close-btn"
+            id="btnCloseCustomBoxModal"
+            aria-label="Đóng tùy chỉnh"
+            onClick={onClose}
+          >
+            ✕
+          </button>
+        </div>
+
+        {/* Modal Body (Scrollable) */}
+        <div className="custom-box-body">
+          {/* Cake 1 */}
+          <div className="custom-cake-selection-card">
+            <div className="cake-selection-header">
+              <h3 className="cake-selection-title">Bánh 1</h3>
+              <span className="cake-selection-badge">Hương vị tự chọn</span>
+            </div>
+            <div className="flavor-options-grid">
               {FLAVORS.map((flavor) => (
-                <button
-                  key={flavor.id}
-                  type="button"
-                  disabled={selectedFlavors.length >= boxSize}
-                  onClick={() => handleSelectFlavor(flavor)}
-                  style={{
-                    padding: 8,
-                    borderRadius: 8,
-                    border: '1px solid #FDD6DC',
-                    background: '#FFF',
-                    cursor: selectedFlavors.length >= boxSize ? 'not-allowed' : 'pointer',
-                    opacity: selectedFlavors.length >= boxSize ? 0.6 : 1,
-                    textAlign: 'center',
-                  }}
-                >
-                  <img src={flavor.img} alt={flavor.name} style={{ width: 40, height: 40, margin: '0 auto 4px', display: 'block' }} />
-                  <span style={{ fontSize: 12, fontWeight: 600, color: '#18345D', display: 'block' }}>{flavor.name}</span>
-                </button>
+                <label key={`cake1-${flavor}`} className="flavor-radio-item">
+                  <input
+                    type="radio"
+                    name="cake_flavor_1"
+                    value={flavor}
+                    checked={cake1 === flavor}
+                    onChange={() => setCake1(flavor)}
+                    className="flavor-radio-input"
+                  />
+                  <span className="flavor-radio-custom"></span>
+                  <span className="flavor-name">{flavor}</span>
+                </label>
               ))}
             </div>
           </div>
 
-          <div>
-            <p style={{ fontWeight: 'bold', marginBottom: 8, color: '#004691' }}>3. Ô Bánh Đã Chọn Trong Hộp:</p>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, minHeight: 45, padding: 8, background: '#F8F5F0', borderRadius: 8 }}>
-              {selectedFlavors.length === 0 ? (
-                <span style={{ fontSize: 13, color: '#74575C' }}>Chưa chọn vị bánh nào. Hãy nhấp vào danh sách trên.</span>
-              ) : (
-                selectedFlavors.map((item, idx) => (
-                  <span
-                    key={idx}
-                    onClick={() => handleRemoveFlavor(idx)}
-                    title="Nhấp để xóa khỏi hộp"
-                    style={{
-                      background: '#F8CDD4',
-                      color: '#004691',
-                      padding: '4px 10px',
-                      borderRadius: 16,
-                      fontSize: 12,
-                      fontWeight: 'bold',
-                      cursor: 'pointer',
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      gap: 4,
-                    }}
-                  >
-                    {item.name} &times;
-                  </span>
-                ))
-              )}
+          {/* Cake 2 */}
+          <div className="custom-cake-selection-card">
+            <div className="cake-selection-header">
+              <h3 className="cake-selection-title">Bánh 2</h3>
+              <span className="cake-selection-badge">Hương vị tự chọn</span>
             </div>
+            <div className="flavor-options-grid">
+              {FLAVORS.map((flavor) => (
+                <label key={`cake2-${flavor}`} className="flavor-radio-item">
+                  <input
+                    type="radio"
+                    name="cake_flavor_2"
+                    value={flavor}
+                    checked={cake2 === flavor}
+                    onChange={() => setCake2(flavor)}
+                    className="flavor-radio-input"
+                  />
+                  <span className="flavor-radio-custom"></span>
+                  <span className="flavor-name">{flavor}</span>
+                </label>
+              ))}
+            </div>
+          </div>
+
+          {/* Cake 3 */}
+          <div className="custom-cake-selection-card">
+            <div className="cake-selection-header">
+              <h3 className="cake-selection-title">Bánh 3</h3>
+              <span className="cake-selection-badge">Hương vị tự chọn</span>
+            </div>
+            <div className="flavor-options-grid">
+              {FLAVORS.map((flavor) => (
+                <label key={`cake3-${flavor}`} className="flavor-radio-item">
+                  <input
+                    type="radio"
+                    name="cake_flavor_3"
+                    value={flavor}
+                    checked={cake3 === flavor}
+                    onChange={() => setCake3(flavor)}
+                    className="flavor-radio-input"
+                  />
+                  <span className="flavor-radio-custom"></span>
+                  <span className="flavor-name">{flavor}</span>
+                </label>
+              ))}
+            </div>
+          </div>
+
+          {/* Cake 4 */}
+          <div className="custom-cake-selection-card">
+            <div className="cake-selection-header">
+              <h3 className="cake-selection-title">Bánh 4</h3>
+              <span className="cake-selection-badge">Hương vị tự chọn</span>
+            </div>
+            <div className="flavor-options-grid">
+              {FLAVORS.map((flavor) => (
+                <label key={`cake4-${flavor}`} className="flavor-radio-item">
+                  <input
+                    type="radio"
+                    name="cake_flavor_4"
+                    value={flavor}
+                    checked={cake4 === flavor}
+                    onChange={() => setCake4(flavor)}
+                    className="flavor-radio-input"
+                  />
+                  <span className="flavor-radio-custom"></span>
+                  <span className="flavor-name">{flavor}</span>
+                </label>
+              ))}
+            </div>
+          </div>
+
+          {/* Handwritten Note Textarea */}
+          <div className="custom-cake-note-section">
+            <label htmlFor="customGiftNote" className="custom-cake-note-label">
+              Nội dung thư:
+            </label>
+            <textarea
+              id="customGiftNote"
+              className="custom-cake-note-textarea"
+              placeholder="Thêm điều muốn nói với người ấy..."
+              value={giftNote}
+              onChange={(e) => setGiftNote(e.target.value)}
+            ></textarea>
           </div>
         </div>
 
-        <footer className="policy-modal-footer">
+        {/* Modal Footer */}
+        <div className="custom-box-footer">
           <button
             type="button"
-            className="btn-modal-agree"
-            disabled={selectedFlavors.length < boxSize}
-            onClick={handleConfirmBox}
-            style={{ opacity: selectedFlavors.length < boxSize ? 0.5 : 1 }}
+            className="btn-custom-box-submit"
+            id="btnModalSubmitAddToCart"
+            onClick={handleConfirm}
           >
-            Xác Nhận Thêm Hộp Quà ({BOX_PRICES[boxSize].toLocaleString('vi-VN')}đ)
+            Thêm vào giỏ hàng
           </button>
-        </footer>
+        </div>
       </div>
     </div>
   );

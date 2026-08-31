@@ -4,27 +4,34 @@ import React, { useState, Suspense } from 'react';
 import Link from 'next/link';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useCart } from '../../context/CartContext';
+import CustomBoxModal from '../../components/CustomBoxModal';
 
 const PRODUCTS_DATA = {
   'glaze': {
     name: 'GLAZE',
     price: 25000,
     rating: '(128 Đánh giá)',
+    isBestSeller: true,
     desc: 'Chiếc donut kinh điển với kết cấu mềm xốp, được ủ bột và chiên vàng nhẹ để giữ độ ẩm tự nhiên bên trong. Bề mặt phủ lớp glaze đường sữa mỏng, tạo độ bóng đẹp mắt cùng vị ngọt thanh dịu dàng. Đây là lựa chọn hoàn hảo cho những ai yêu thích hương vị nguyên bản của donut Mỹ.',
+    shortDesc: 'Vị truyền thống phủ lớp đường sữa mỏng nhẹ.',
     images: ['/assets/menu-sp-1.png', '/assets/glaze-thumb-2.png', '/assets/glaze-thumb-3.png'],
   },
   'oreomallow': {
     name: 'OREOMALLOW',
     price: 25000,
     rating: '(95 Đánh giá)',
+    isBestSeller: true,
     desc: 'Bánh donut phủ kem marshmallow béo ngậy cùng vụn bánh quy Oreo giòn rụm đậm đà. Hương vị hòa quyện giữa đắng nhẹ socola và ngọt thơm marshmallow.',
+    shortDesc: 'Bánh donut phủ kem marshmallow và vụn bánh Oreo.',
     images: ['/assets/menu-sp-2.png', '/assets/oreomallow-thumb-2.png', '/assets/oreomallow-thumb-3.png'],
   },
   'smoker-white': {
     name: 'SMOKER WHITE',
     price: 29000,
     rating: '(76 Đánh giá)',
+    isBestSeller: true,
     desc: 'Hương vị socola trắng khói độc đáo, ngọt dịu và thơm ngậy quyến rũ. Bề mặt trang trí hạt dẻ cười nghiền nhỏ sang trọng.',
+    shortDesc: 'Socola trắng khói và hạt phỉ bùi béo.',
     images: ['/assets/menu-sp-3.png', '/assets/smoked-white-thumb-2.png', '/assets/smoked-white-thumb-3.png'],
   },
   'red-velvet': {
@@ -32,6 +39,7 @@ const PRODUCTS_DATA = {
     price: 30000,
     rating: '(210 Đánh giá)',
     desc: 'Sắc đỏ nhung quý phái kết hợp sốt cream cheese béo nhẹ chuẩn vị bánh Mỹ. Lớp bánh nhung dẻo mịn thơm lừng vani.',
+    shortDesc: 'Kem phô mai chanh kết hợp cốt bánh nhung đỏ.',
     images: ['/assets/menu-sp-4.png', '/assets/red-velvet-thumb-2.png', '/assets/red-velvet-thumb-3.png'],
   },
   'dark-cookie': {
@@ -39,6 +47,7 @@ const PRODUCTS_DATA = {
     price: 30000,
     rating: '(142 Đánh giá)',
     desc: 'Socola đen 70% nguyên chất hòa quyện lớp bánh quy đen giòn rụm đậm đà. Sự lựa chọn hoàn hảo cho tín đồ yêu socola nguyên bản.',
+    shortDesc: 'Socola đen 70% hòa quyện lớp bánh quy giòn.',
     images: ['/assets/menu-sp-5.png', '/assets/dark-cookie-thumb-2.png', '/assets/dark-cookie-thumb-3.png'],
   },
   'blackpink': {
@@ -46,6 +55,7 @@ const PRODUCTS_DATA = {
     price: 30000,
     rating: '(188 Đánh giá)',
     desc: 'Sự kết hợp hoàn hảo giữa socola đen mượt mà và lớp phủ kem dâu tây hồng ngọt ngào quyến rũ.',
+    shortDesc: 'Socola đen mượt mà và kem dâu tây hồng quyến rũ.',
     images: ['/assets/menu-sp-6.png', '/assets/blackpink-thumb-2.png', '/assets/blackpink-thumb-3.png'],
   },
   'fruit-pop': {
@@ -53,6 +63,7 @@ const PRODUCTS_DATA = {
     price: 30000,
     rating: '(115 Đánh giá)',
     desc: 'Lớp phủ đường ngũ sắc trái cây nhiệt đới chua ngọt thanh mát, bùng nổ vị giác sảng khoái.',
+    shortDesc: 'Socola ngũ sắc trái cây và cốm giòn tan.',
     images: ['/assets/menu-sp-7.png', '/assets/fruit-pop-thumb-2.png', '/assets/fruit-pop-thumb-3.png'],
   },
   'mango-tango': {
@@ -60,6 +71,7 @@ const PRODUCTS_DATA = {
     price: 30000,
     rating: '(92 Đánh giá)',
     desc: 'Nhân kem xoài cát chín vàng óng ánh, thơm nức hương vị nhiệt đới Sài Gòn.',
+    shortDesc: 'Nhân kem xoài nhiệt đới thơm nức ngọt lành.',
     images: ['/assets/menu-sp-8.png', '/assets/mango-tango-thumb-2.png', '/assets/mango-tango-thumb-3.png'],
   },
   'very-berry': {
@@ -67,7 +79,18 @@ const PRODUCTS_DATA = {
     price: 36000,
     rating: '(164 Đánh giá)',
     desc: 'Vị dâu tây ngọt ngào phủ lớp đường sữa mỏng nhẹ, hòa quyện sốt berry tươi thơm lừng.',
+    shortDesc: 'Nhân kem phúc bồn tử phủ socola dâu tươi.',
     images: ['/assets/menu-sp-9.png', '/assets/very-berry-thumb-2.png', '/assets/very-berry-thumb-3.png'],
+  },
+  'gift-box': {
+    name: 'GIFT BOX',
+    price: 170000,
+    rating: '(128 Đánh giá)',
+    isBestSeller: true,
+    isGiftBox: true,
+    desc: 'Bao gồm 4 chiếc bánh donut tự chọn bất kỳ cùng một lá thư tay được viết riêng, giúp mỗi hộp quà không chỉ ngọt ngào bởi hương vị mà còn đong đầy những cảm xúc chân thành.',
+    shortDesc: 'Hộp quà 4 bánh donut nghệ nhân tự chọn cùng thư tay thủ công tinh tế.',
+    images: ['/assets/cat-gift-box.png', '/assets/detail-thumb-1.png', '/assets/detail-thumb-2.png'],
   },
 };
 
@@ -79,9 +102,20 @@ function ProductDetailContent() {
 
   const [activeImgIndex, setActiveImgIndex] = useState(0);
   const [quantity, setQuantity] = useState(1);
+  const [isCustomBoxOpen, setIsCustomBoxOpen] = useState(false);
   const { addToCart } = useCart();
 
+  React.useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+    setActiveImgIndex(0);
+    setQuantity(1);
+  }, [productId]);
+
   const handleAddToCart = () => {
+    if (productId === 'gift-box' || product.isGiftBox) {
+      setIsCustomBoxOpen(true);
+      return;
+    }
     addToCart({
       id: productId,
       name: product.name,
@@ -92,6 +126,10 @@ function ProductDetailContent() {
   };
 
   const handleBuyNow = () => {
+    if (productId === 'gift-box' || product.isGiftBox) {
+      setIsCustomBoxOpen(true);
+      return;
+    }
     handleAddToCart();
     router.push('/cart');
   };
@@ -202,10 +240,12 @@ function ProductDetailContent() {
               <div className="detail-info-card">
                 <div className="detail-title-wrap">
                   <h1 className="detail-product-title">{product.name}</h1>
-                  <div className="detail-badge-wrap">
-                    <img src="/assets/badge-best-seller-bg.svg" alt="" className="detail-badge-bg" />
-                    <span className="detail-best-seller-badge">BEST SELLER</span>
-                  </div>
+                  {product.isBestSeller && (
+                    <div className="detail-badge-wrap">
+                      <img src="/assets/badge-best-seller-bg.svg" alt="" className="detail-badge-bg" />
+                      <span className="detail-best-seller-badge">BEST SELLER</span>
+                    </div>
+                  )}
                 </div>
 
                 <div className="detail-price-rating-row">
@@ -314,6 +354,53 @@ function ProductDetailContent() {
           </div>
         </div>
       </section>
+
+      {/* Other Products Section ("Sản phẩm khác" - Figma 2173:77803) */}
+      <section className="detail-related-section" aria-label="Sản phẩm khác">
+        <div className="detail-wrapper">
+          <h2 className="related-section-title">Sản phẩm khác</h2>
+
+          <div className="related-products-carousel">
+            {Object.entries(PRODUCTS_DATA)
+              .filter(([key]) => key !== productId)
+              .map(([key, item]) => (
+                <article key={key} className="related-product-card">
+                  <Link href={`/product-detail?product=${key}`} className="related-card-link" aria-label={`Xem chi tiết bánh ${item.name}`}>
+                    <div className="related-card-img-wrap">
+                      <img src={item.images[0]} alt={`Bánh ${item.name}`} loading="lazy" />
+                    </div>
+                  </Link>
+                  <div className="related-card-body">
+                    <Link href={`/product-detail?product=${key}`} className="related-card-title-link">
+                      <h3 className="related-card-title">{item.name}</h3>
+                    </Link>
+                    <p className="related-card-desc">{item.shortDesc || item.desc}</p>
+                    <div className="related-card-footer">
+                      <span className="related-card-price">{item.price.toLocaleString('vi-VN')} VNĐ</span>
+                      <button
+                        type="button"
+                        className="related-add-btn menu-add-cart-btn"
+                        aria-label={`Thêm bánh ${item.name} vào giỏ`}
+                        onClick={() => addToCart({
+                          id: key,
+                          name: item.name,
+                          price: item.price,
+                          img: item.images[0],
+                          qty: 1,
+                        })}
+                      >
+                        <img src="/assets/icon-add-cart-white.svg" alt="" width="20" height="21" />
+                      </button>
+                    </div>
+                  </div>
+                </article>
+              ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Custom Box Modal for Gift Box */}
+      <CustomBoxModal isOpen={isCustomBoxOpen} onClose={() => setIsCustomBoxOpen(false)} />
     </main>
   );
 }
