@@ -15,6 +15,8 @@ export default function AccountPage() {
   const [testOtpHint, setTestOtpHint] = useState('');
   const [authError, setAuthError] = useState('');
   const [authLoadingBtn, setAuthLoadingBtn] = useState(false);
+  const [showSignupPassword, setShowSignupPassword] = useState(false);
+  const [showLoginPassword, setShowLoginPassword] = useState(false);
   const [signupForm, setSignupForm] = useState({ name: '', email: '', phone: '', password: '' });
   const [editProfileForm, setEditProfileForm] = useState({
     name: userProfile.name || '',
@@ -35,6 +37,25 @@ export default function AccountPage() {
       setAuthLoadingBtn(false);
     }
   };
+
+  const handleSocialLogin = (provider) => {
+    setAuthError('');
+    setAuthLoadingBtn(true);
+    window.location.href = `/api/auth/oauth?provider=${provider}`;
+  };
+
+  React.useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const err = params.get('error');
+      if (err) {
+        if (err === 'oauth_init_failed') setAuthError('Không thể khởi tạo phiên đăng nhập mạng xã hội.');
+        else if (err === 'oauth_exchange_failed') setAuthError('Xác thực tài khoản với nhà cung cấp thất bại.');
+        else if (err === 'db_user_create_failed') setAuthError('Không thể tạo tài khoản người dùng trong cơ sở dữ liệu.');
+        else setAuthError(`Lỗi xác thực: ${err}`);
+      }
+    }
+  }, []);
 
   const handleForgotSubmit = async (e) => {
     e.preventDefault();
@@ -127,13 +148,25 @@ export default function AccountPage() {
     }
   };
 
+  // Sync edit profile form with user profile
+  React.useEffect(() => {
+    if (userProfile) {
+      setEditProfileForm({
+        name: userProfile.name || '',
+        email: userProfile.email || '',
+        phone: userProfile.phone || '',
+        address: userProfile.address || '',
+      });
+    }
+  }, [userProfile]);
+
   const handleSaveProfile = async (e) => {
     e.preventDefault();
     setAuthError('');
     setAuthLoadingBtn(true);
     try {
       await updateProfile(editProfileForm);
-      setAuthState('dashboard');
+      setAuthState('login');
     } catch (err) {
       setAuthError(err.message || 'Cập nhật thất bại.');
     } finally {
@@ -350,19 +383,30 @@ export default function AccountPage() {
               {/* Right Column: Form Area */}
               <div className="profile-update-form-col">
                 <header className="profile-form-header">
-                  <div className="profile-header-top-row">
-                    <h1 className="profile-form-title">Thông tin cá nhân</h1>
-                    <button type="button" className="btn-profile-back-dashboard" id="btnBackFromProfileEdit" aria-label="Quay lại bảng điều khiển" onClick={() => setAuthState('dashboard')}>← Bảng điều khiển</button>
-                  </div>
-                  <p className="profile-form-subtitle">Cập nhật email và số điện thoại liên lạc mới nhất.</p>
+                  <h1 className="profile-form-title">Thông tin cá nhân</h1>
+                  <p className="profile-form-subtitle">Cập nhật họ tên, email và số điện thoại liên lạc mới nhất.</p>
                 </header>
 
                 <form className="profile-form-inner" id="profileEditForm" onSubmit={handleSaveProfile}>
+                  {authError && (
+                    <div style={{ color: '#d9534f', background: '#fdf7f7', border: '1px solid #eed3d7', borderRadius: 8, padding: '10px 14px', marginBottom: 16, fontSize: 13, fontWeight: 500 }}>
+                      ⚠️ {authError}
+                    </div>
+                  )}
+
                   <div className="profile-input-group">
                     <label htmlFor="editFullNameInput" className="profile-input-label">Họ và tên</label>
                     <div className="profile-input-box-wrap">
                       <img src="/assets/icon-signup-user.svg" alt="" className="profile-field-icon" width="18" height="18" />
-                      <input type="text" id="editFullNameInput" className="profile-field-input" value={editProfileForm.name} onChange={(e) => setEditProfileForm({ ...editProfileForm, name: e.target.value })} required />
+                      <input
+                        type="text"
+                        id="editFullNameInput"
+                        className="profile-field-input"
+                        placeholder="Nguyễn Văn An"
+                        value={editProfileForm.name}
+                        onChange={(e) => setEditProfileForm({ ...editProfileForm, name: e.target.value })}
+                        required
+                      />
                     </div>
                   </div>
 
@@ -370,7 +414,15 @@ export default function AccountPage() {
                     <label htmlFor="editEmailInput" className="profile-input-label">Email</label>
                     <div className="profile-input-box-wrap">
                       <img src="/assets/icon-signup-email.svg" alt="" className="profile-field-icon" width="18" height="18" />
-                      <input type="email" id="editEmailInput" className="profile-field-input" value={editProfileForm.email} onChange={(e) => setEditProfileForm({ ...editProfileForm, email: e.target.value })} required />
+                      <input
+                        type="email"
+                        id="editEmailInput"
+                        className="profile-field-input"
+                        placeholder="nguyen.vana@email.com"
+                        value={editProfileForm.email}
+                        onChange={(e) => setEditProfileForm({ ...editProfileForm, email: e.target.value })}
+                        required
+                      />
                     </div>
                   </div>
 
@@ -378,7 +430,15 @@ export default function AccountPage() {
                     <label htmlFor="editPhoneInput" className="profile-input-label">Số điện thoại</label>
                     <div className="profile-input-box-wrap">
                       <img src="/assets/icon-signup-phone.svg" alt="" className="profile-field-icon" width="18" height="18" />
-                      <input type="tel" id="editPhoneInput" className="profile-field-input" value={editProfileForm.phone} onChange={(e) => setEditProfileForm({ ...editProfileForm, phone: e.target.value })} required />
+                      <input
+                        type="tel"
+                        id="editPhoneInput"
+                        className="profile-field-input"
+                        placeholder="0901 234 567"
+                        value={editProfileForm.phone}
+                        onChange={(e) => setEditProfileForm({ ...editProfileForm, phone: e.target.value })}
+                        required
+                      />
                     </div>
                   </div>
 
@@ -386,20 +446,34 @@ export default function AccountPage() {
                     <label htmlFor="editAddressInput" className="profile-input-label">Địa chỉ giao hàng</label>
                     <div className="profile-input-box-wrap textarea-mode">
                       <img src="/assets/icon-location.svg" alt="" className="profile-field-icon icon-pin" width="18" height="18" />
-                      <textarea id="editAddressInput" className="profile-field-textarea" value={editProfileForm.address} onChange={(e) => setEditProfileForm({ ...editProfileForm, address: e.target.value })}></textarea>
+                      <textarea
+                        id="editAddressInput"
+                        className="profile-field-textarea"
+                        placeholder="123 Nguyễn Huệ, Phường Bến Nghé, Quận 1, TP. Hồ Chí Minh"
+                        rows="3"
+                        value={editProfileForm.address}
+                        onChange={(e) => setEditProfileForm({ ...editProfileForm, address: e.target.value })}
+                      ></textarea>
                     </div>
                   </div>
 
-                  <div className="profile-confirm-row">
+                  <div className="profile-confirm-row" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <label className="custom-checkbox-label">
                       <input type="checkbox" id="confirmProfileUpdateCheckbox" className="custom-checkbox-input" defaultChecked />
                       <span className="custom-checkbox-box"></span>
                       <span className="profile-confirm-text">Xác nhận thông tin cập nhật</span>
                     </label>
+                    <button
+                      type="button"
+                      onClick={() => setAuthState('login')}
+                      style={{ background: 'none', border: 'none', color: '#74575C', cursor: 'pointer', fontSize: 13, textDecoration: 'underline' }}
+                    >
+                      Hủy bỏ
+                    </button>
                   </div>
 
-                  <button type="submit" className="btn-profile-submit" id="btnSaveProfile">
-                    <span>Cập nhật thông tin</span>
+                  <button type="submit" disabled={authLoadingBtn} className="btn-profile-submit" id="btnSaveProfile">
+                    <span>{authLoadingBtn ? 'Đang lưu...' : 'Cập nhật thông tin'}</span>
                     <span className="submit-arrow">→</span>
                   </button>
                 </form>
@@ -456,7 +530,33 @@ export default function AccountPage() {
                     <label htmlFor="loginPassword" className="login-label">Mật khẩu</label>
                     <button type="button" className="login-forgot-link" id="forgotPasswordLink" onClick={() => { setAuthError(''); setAuthState('forgot'); }} style={{ background: 'none', border: 'none', cursor: 'pointer' }}>Quên mật khẩu?</button>
                   </div>
-                  <input type="password" id="loginPassword" className="login-input" placeholder="••••••••" value={loginPassword} onChange={(e) => setLoginPassword(e.target.value)} required />
+                  <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+                    <input
+                      type={showLoginPassword ? 'text' : 'password'}
+                      id="loginPassword"
+                      className="login-input"
+                      style={{ paddingRight: 44 }}
+                      placeholder="••••••••"
+                      value={loginPassword}
+                      onChange={(e) => setLoginPassword(e.target.value)}
+                      required
+                    />
+                    <button
+                      type="button"
+                      className="btn-toggle-pwd"
+                      id="btnToggleLoginPwd"
+                      aria-label={showLoginPassword ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}
+                      onClick={() => setShowLoginPassword(!showLoginPassword)}
+                    >
+                      <img
+                        src="/assets/icon-eye-toggle.svg"
+                        alt=""
+                        width="20"
+                        height="14"
+                        style={{ filter: showLoginPassword ? 'brightness(0.3) sepia(1) hue-rotate(180deg) saturate(5)' : 'none' }}
+                      />
+                    </button>
+                  </div>
                 </div>
 
                 <div className="login-remember-row">
@@ -479,11 +579,23 @@ export default function AccountPage() {
               </div>
 
               <div className="social-login-grid">
-                <button type="button" className="social-btn btn-google" id="btnSocialGoogle">
+                <button
+                  type="button"
+                  className="social-btn btn-google"
+                  id="btnSocialGoogle"
+                  disabled={authLoadingBtn}
+                  onClick={() => handleSocialLogin('google')}
+                >
                   <img src="/assets/icon-google.png" alt="Google" width="22" height="22" />
                   <span>Google</span>
                 </button>
-                <button type="button" className="social-btn btn-facebook" id="btnSocialFacebook">
+                <button
+                  type="button"
+                  className="social-btn btn-facebook"
+                  id="btnSocialFacebook"
+                  disabled={authLoadingBtn}
+                  onClick={() => handleSocialLogin('facebook')}
+                >
                   <img src="/assets/icon-facebook.png" alt="Facebook" width="22" height="22" />
                   <span>Facebook</span>
                 </button>
@@ -635,8 +747,26 @@ export default function AccountPage() {
 
           <div className="signup-card-container">
             <div className="signup-card">
+              {/* Left Side: Visual / Brand Content (Figma Node 1303:25824) */}
               <div className="signup-left-col">
-                <img src="/assets/signup-brand-banner.png" alt="Donut Saigon - Trở Thành Khách Hàng Thân Thiết" className="signup-banner-img" />
+                <div className="signup-visual-content-wrap">
+                  {/* 1. Badge (Figma Node 1303:25826) */}
+                  <div className="signup-visual-badge-wrap">
+                    <span className="signup-visual-badge">GÓC NGỌT NGÀO</span>
+                  </div>
+
+                  {/* 2. Heading 1 (Figma Node 1303:25829) */}
+                  <h2 className="signup-visual-heading">
+                    Trở Thành<br />Khách Hàng<br />Thân Thiết
+                  </h2>
+
+                  {/* 3. Description (Figma Node 1303:25830 / 1303:25831) */}
+                  <div className="signup-visual-desc-wrap">
+                    <p className="signup-visual-desc">
+                      Tận hưởng những ưu đãi đặc quyền và cập nhật mới nhất từ cửa hàng của chúng tôi.
+                    </p>
+                  </div>
+                </div>
               </div>
 
               <div className="signup-right-col">
@@ -705,7 +835,7 @@ export default function AccountPage() {
                     <div className="signup-input-wrap">
                       <img src="/assets/icon-signup-lock.svg" alt="" className="input-icon-left" width="16" height="18" />
                       <input
-                        type="password"
+                        type={showSignupPassword ? 'text' : 'password'}
                         id="signupPassword"
                         className="signup-input"
                         placeholder="•••••••• (tối thiểu 6 ký tự)"
@@ -713,6 +843,21 @@ export default function AccountPage() {
                         onChange={(e) => setSignupForm({ ...signupForm, password: e.target.value })}
                         required
                       />
+                      <button
+                        type="button"
+                        className="btn-toggle-pwd"
+                        id="btnToggleSignupPwd"
+                        aria-label={showSignupPassword ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}
+                        onClick={() => setShowSignupPassword(!showSignupPassword)}
+                      >
+                        <img
+                          src="/assets/icon-eye-toggle.svg"
+                          alt=""
+                          width="20"
+                          height="14"
+                          style={{ filter: showSignupPassword ? 'brightness(0.3) sepia(1) hue-rotate(180deg) saturate(5)' : 'none' }}
+                        />
+                      </button>
                     </div>
                   </div>
 
@@ -730,6 +875,35 @@ export default function AccountPage() {
                     <span>{authLoadingBtn ? 'Đang tạo tài khoản...' : 'Đăng ký ngay'}</span>
                   </button>
                 </form>
+
+                <div className="social-auth-divider" style={{ margin: '16px 0 10px' }}>
+                  <span className="divider-line"></span>
+                  <span className="divider-text">HOẶC ĐĂNG KÝ VỚI</span>
+                  <span className="divider-line"></span>
+                </div>
+
+                <div className="social-login-grid">
+                  <button
+                    type="button"
+                    className="social-btn btn-google"
+                    id="btnSignupSocialGoogle"
+                    disabled={authLoadingBtn}
+                    onClick={() => handleSocialLogin('google')}
+                  >
+                    <img src="/assets/icon-google.png" alt="Google" width="22" height="22" />
+                    <span>Google</span>
+                  </button>
+                  <button
+                    type="button"
+                    className="social-btn btn-facebook"
+                    id="btnSignupSocialFacebook"
+                    disabled={authLoadingBtn}
+                    onClick={() => handleSocialLogin('facebook')}
+                  >
+                    <img src="/assets/icon-facebook.png" alt="Facebook" width="22" height="22" />
+                    <span>Facebook</span>
+                  </button>
+                </div>
 
                 <div className="signup-login-redirect">
                   <span>Đã có tài khoản?</span>

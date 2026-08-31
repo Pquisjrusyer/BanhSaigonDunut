@@ -1,11 +1,25 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, Suspense } from 'react';
+import { usePathname, useSearchParams } from 'next/navigation';
 import Lenis from 'lenis';
 import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/dist/ScrollTrigger';
 
-export default function LenisScroll() {
+function LenisScrollHandler() {
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+
+  // Scroll to top immediately on any route or search param change
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+      if (window.lenis) {
+        window.lenis.scrollTo(0, { immediate: true });
+      }
+    }
+  }, [pathname, searchParams]);
+
   useEffect(() => {
     if (typeof window === 'undefined') return;
 
@@ -41,4 +55,12 @@ export default function LenisScroll() {
   }, []);
 
   return null;
+}
+
+export default function LenisScroll() {
+  return (
+    <Suspense fallback={null}>
+      <LenisScrollHandler />
+    </Suspense>
+  );
 }
