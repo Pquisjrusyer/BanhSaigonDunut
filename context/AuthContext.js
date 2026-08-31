@@ -19,6 +19,60 @@ export function AuthProvider({ children }) {
   const [authLoading, setAuthLoading] = useState(true);
   const { showToast } = useToast();
 
+  const setUserFromApiResponse = useCallback((user) => {
+    setUserProfile({
+      id: user.id,
+      name: user.full_name || '',
+      email: user.email || '',
+      phone: user.phone || '',
+      address: user.address || '',
+      district: user.district || '',
+      avatar: user.avatar || '/assets/avatar-user.png',
+      points: user.points || 0,
+      role: user.role || 'customer',
+    });
+    setIsLoggedIn(true);
+  }, []);
+
+  // Handle OAuth hash fragment return (from Google / Facebook OAuth redirect)
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    const hash = window.location.hash;
+    if (hash && hash.includes('access_token=')) {
+      const params = new URLSearchParams(hash.substring(1));
+      const accessToken = params.get('access_token');
+
+      if (accessToken) {
+        // Clean the hash from the browser URL immediately
+        const cleanUrl = window.location.pathname + window.location.search;
+        window.history.replaceState(null, '', cleanUrl);
+
+        fetch('/api/auth/oauth-token', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ access_token: accessToken }),
+        })
+          .then((res) => res.json())
+          .then((data) => {
+            if (data.success && data.user) {
+              setUserFromApiResponse(data.user);
+              showToast(data.message || 'Đăng nhập Google thành công!', '🎉');
+              // Navigate to /account dashboard if not already there
+              if (window.location.pathname !== '/account') {
+                window.location.href = '/account';
+              }
+            } else if (data.error) {
+              showToast(data.error, '⚠️');
+            }
+          })
+          .catch((err) => {
+            console.error('OAuth token exchange error:', err);
+          });
+      }
+    }
+  }, [setUserFromApiResponse, showToast]);
+
   // Check session on mount
   useEffect(() => {
     const checkSession = async () => {
@@ -71,21 +125,6 @@ export function AuthProvider({ children }) {
     };
     fetchOrders();
   }, [isLoggedIn]);
-
-  const setUserFromApiResponse = useCallback((user) => {
-    setUserProfile({
-      id: user.id,
-      name: user.full_name || '',
-      email: user.email || '',
-      phone: user.phone || '',
-      address: user.address || '',
-      district: user.district || '',
-      avatar: user.avatar || '/assets/avatar-user.png',
-      points: user.points || 0,
-      role: user.role || 'customer',
-    });
-    setIsLoggedIn(true);
-  }, []);
 
   const login = useCallback(async (email, password) => {
     const res = await fetch('/api/auth/login', {

@@ -957,16 +957,23 @@ donut-footer {
 }
 
 .reviews-header {
+  display: flex;
+  justify-content: center;
+  align-items: center;
   text-align: center;
-  margin-bottom: 40px;
+  width: 100%;
+  margin: 0 auto 40px;
 }
 
 .reviews-title {
   font-family: var(--font-family-display);
-  font-size: clamp(28px, 3.5vw, 32px);
+  font-size: clamp(28px, 3.5vw, 36px);
   font-weight: 900;
   color: var(--primary);
   line-height: 1.25;
+  text-align: center;
+  margin: 0 auto;
+  display: block;
 }
 
 .reviews-carousel-wrapper {
