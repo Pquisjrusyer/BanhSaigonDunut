@@ -41,14 +41,14 @@ export async function POST(request) {
 
     if (!authError && authData?.user) {
       const u = authData.user;
-      email = u.email;
+      email = u.email?.toLowerCase();
       fullName = u.user_metadata?.full_name || u.user_metadata?.name || u.email?.split('@')[0];
       avatar = u.user_metadata?.avatar_url || u.user_metadata?.picture || '/assets/avatar-user.png';
     } else {
       // Fallback: decode JWT payload directly
       const payload = parseJwt(access_token);
       if (payload?.email) {
-        email = payload.email;
+        email = payload.email.toLowerCase();
         fullName =
           payload.user_metadata?.full_name ||
           payload.user_metadata?.name ||
@@ -73,7 +73,7 @@ export async function POST(request) {
     const { data: existingUser, error: selectErr } = await supabase
       .from('users')
       .select('id, email, full_name, phone, address, district, avatar, points, role')
-      .eq('email', email.toLowerCase())
+      .eq('email', email)
       .single();
 
     let dbUser = existingUser;
@@ -84,22 +84,23 @@ export async function POST(request) {
         .from('users')
         .insert([
           {
-            email: email.toLowerCase(),
+            email: email,
+            password_hash: 'OAUTH_GOOGLE',
             full_name: fullName,
             avatar: avatar,
             points: 50,
             role: 'customer',
           },
         ])
-        .select()
+        .select('id, email, full_name, phone, address, district, avatar, points, role')
         .single();
 
       if (insertErr || !newUser) {
         console.error('Error creating oauth user in database:', insertErr);
-        // Fallback user object if table insert fails
+        // Fallback user object
         dbUser = {
           id: 'oauth-' + Date.now(),
-          email: email.toLowerCase(),
+          email: email,
           full_name: fullName,
           avatar: avatar,
           points: 50,
@@ -110,17 +111,26 @@ export async function POST(request) {
       }
     } else {
       // Update avatar or name if missing
+      const updates = {};
       if (!existingUser.avatar || existingUser.avatar === '/assets/avatar-user.png') {
-        await supabase
+        updates.avatar = avatar;
+      }
+      if (!existingUser.full_name && fullName) {
+        updates.full_name = fullName;
+      }
+      if (Object.keys(updates).length > 0) {
+        const { data: updated } = await supabase
           .from('users')
-          .update({ avatar: avatar })
-          .eq('id', existingUser.id);
-        dbUser.avatar = avatar;
+          .update(updates)
+          .eq('id', existingUser.id)
+          .select('id, email, full_name, phone, address, district, avatar, points, role')
+          .single();
+        if (updated) dbUser = updated;
       }
     }
 
-    // 4. Issue local authentication cookie (dnsg_token)
-    await setAuthCookie(dbUser.id);
+    // 4. Issue local authentication cookie with user ID and email
+    await setAuthCookie(dbUser.id, dbUser.email);
 
     return NextResponse.json({
       success: true,
