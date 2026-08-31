@@ -22,7 +22,8 @@ export async function GET(request) {
     }
 
     // Real Supabase OAuth flow
-    const redirectUrl = `${origin}/account`;
+    const clientRedirectTo = searchParams.get('redirect_to');
+    const redirectUrl = clientRedirectTo || `${origin}/account`;
     const { data, error } = await supabase.auth.signInWithOAuth({
       provider,
       options: {
