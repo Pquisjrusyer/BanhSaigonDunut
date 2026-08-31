@@ -5,7 +5,10 @@ import { setAuthCookie } from '../../../../lib/auth';
 export const dynamic = 'force-dynamic';
 
 export async function GET(request) {
-  const { searchParams, origin } = new URL(request.url);
+  const { searchParams } = new URL(request.url);
+  const host = request.headers.get('x-forwarded-host') || request.headers.get('host');
+  const proto = request.headers.get('x-forwarded-proto') || (host?.includes('localhost') ? 'http' : 'https');
+  const origin = host ? `${proto}://${host}` : new URL(request.url).origin;
   const code = searchParams.get('code');
   const provider = searchParams.get('provider') || 'google';
   const isMock = searchParams.get('mock') === 'true';

@@ -606,14 +606,6 @@ export default function AccountPage() {
                 <button type="button" className="signup-link" id="signupLink" onClick={() => setAuthState('signup')} style={{ background: 'none', border: 'none', cursor: 'pointer' }}>Đăng ký ngay</button>
               </div>
             </div>
-
-            <div className="login-page-footer-note">
-              <span className="footer-note-copy">© 2024 Donut Saigon. Bánh donut vừa rẻ vừa ngon.</span>
-              <div className="footer-note-links">
-                <Link href="/policy#privacy">Chính sách bảo mật</Link>
-                <Link href="/policy#terms">Điều khoản dịch vụ</Link>
-              </div>
-            </div>
           </div>
         </section>
       )}
@@ -653,14 +645,6 @@ export default function AccountPage() {
                   <span>{authLoadingBtn ? 'Đang gửi OTP qua Resend...' : 'Tiếp tục'}</span>
                 </button>
               </form>
-            </div>
-
-            <div className="login-page-footer-note">
-              <span className="footer-note-copy">© 2024 Donut Saigon. Bánh donut vừa rẻ vừa ngon.</span>
-              <div className="footer-note-links">
-                <Link href="/policy#privacy">Chính sách bảo mật</Link>
-                <Link href="/policy#terms">Điều khoản dịch vụ</Link>
-              </div>
             </div>
           </div>
         </section>
@@ -726,14 +710,6 @@ export default function AccountPage() {
                   <button type="button" className="btn-resend-otp" id="btnResendOtp">Gửi lại mã</button>
                 </div>
               </form>
-            </div>
-
-            <div className="login-page-footer-note">
-              <span className="footer-note-copy">© 2024 Donut Saigon. Bánh donut vừa rẻ vừa ngon.</span>
-              <div className="footer-note-links">
-                <Link href="/policy#privacy">Chính sách bảo mật</Link>
-                <Link href="/policy#terms">Điều khoản dịch vụ</Link>
-              </div>
             </div>
           </div>
         </section>
@@ -911,14 +887,6 @@ export default function AccountPage() {
                 </div>
               </div>
             </div>
-
-            <div className="login-page-footer-note">
-              <span className="footer-note-copy">© 2024 Donut Saigon. Bánh donut vừa rẻ vừa ngon.</span>
-              <div className="footer-note-links">
-                <Link href="/policy#privacy">Chính sách bảo mật</Link>
-                <Link href="/policy#terms">Điều khoản dịch vụ</Link>
-              </div>
-            </div>
           </div>
         </section>
       )}
@@ -943,14 +911,6 @@ export default function AccountPage() {
               <Link href="/" className="btn-success-home" id="btnSuccessHome" onClick={() => login('nguyen.vana@email.com', '123')}>
                 <span>Tiến đến trang chủ</span>
               </Link>
-            </div>
-
-            <div className="login-page-footer-note">
-              <span className="footer-note-copy">© 2024 Donut Saigon. Bánh donut vừa rẻ vừa ngon.</span>
-              <div className="footer-note-links">
-                <Link href="/policy#privacy">Chính sách bảo mật</Link>
-                <Link href="/policy#terms">Điều khoản dịch vụ</Link>
-              </div>
             </div>
           </div>
         </section>

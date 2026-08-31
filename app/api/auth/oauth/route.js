@@ -5,7 +5,10 @@ export const dynamic = 'force-dynamic';
 
 export async function GET(request) {
   try {
-    const { searchParams, origin } = new URL(request.url);
+    const { searchParams } = new URL(request.url);
+    const host = request.headers.get('x-forwarded-host') || request.headers.get('host');
+    const proto = request.headers.get('x-forwarded-proto') || (host?.includes('localhost') ? 'http' : 'https');
+    const origin = host ? `${proto}://${host}` : new URL(request.url).origin;
     const provider = searchParams.get('provider'); // 'google' | 'facebook'
     const isMock = searchParams.get('mock') === 'true';
 
@@ -19,7 +22,7 @@ export async function GET(request) {
     }
 
     // Real Supabase OAuth flow
-    const redirectUrl = `${origin}/api/auth/callback`;
+    const redirectUrl = `${origin}/account`;
     const { data, error } = await supabase.auth.signInWithOAuth({
       provider,
       options: {
