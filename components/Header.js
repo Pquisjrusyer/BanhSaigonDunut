@@ -15,7 +15,8 @@ export default function Header() {
 
   useEffect(() => {
     const handleScroll = () => {
-      if (window.scrollY > 20) {
+      const scrollPos = window.lenis ? window.lenis.scroll : window.scrollY;
+      if (scrollPos > 20) {
         setIsScrolled(true);
       } else {
         setIsScrolled(false);
@@ -23,8 +24,17 @@ export default function Header() {
     };
 
     window.addEventListener('scroll', handleScroll, { passive: true });
+    if (window.lenis) {
+      window.lenis.on('scroll', handleScroll);
+    }
     handleScroll();
-    return () => window.removeEventListener('scroll', handleScroll);
+
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+      if (window.lenis) {
+        window.lenis.off('scroll', handleScroll);
+      }
+    };
   }, []);
 
   const toggleMobileDrawer = () => {
