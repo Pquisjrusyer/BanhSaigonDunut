@@ -24,12 +24,23 @@ export default function Header() {
     };
 
     window.addEventListener('scroll', handleScroll, { passive: true });
+
+    let lenisTimer = null;
     if (window.lenis) {
       window.lenis.on('scroll', handleScroll);
+    } else {
+      lenisTimer = setInterval(() => {
+        if (window.lenis) {
+          window.lenis.on('scroll', handleScroll);
+          clearInterval(lenisTimer);
+        }
+      }, 100);
     }
+
     handleScroll();
 
     return () => {
+      if (lenisTimer) clearInterval(lenisTimer);
       window.removeEventListener('scroll', handleScroll);
       if (window.lenis) {
         window.lenis.off('scroll', handleScroll);
@@ -83,6 +94,7 @@ export default function Header() {
       id="mainHeader"
       data-node-id="2612:49012"
       data-name="navbar"
+      style={{ position: 'fixed', top: 0, left: 0, right: 0, width: '100%', zIndex: 1000 }}
     >
       <div className="header-container">
         <Link
