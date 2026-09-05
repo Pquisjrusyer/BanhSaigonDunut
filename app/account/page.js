@@ -201,9 +201,9 @@ export default function AccountPage() {
 
             {/* Dashboard Header */}
             <header className="account-header">
-              <h1 className="account-header-title">Lời Khen Từ Bạn</h1>
+              <h1 className="account-header-title">Tài Khoản Của Bạn</h1>
               <p className="account-header-desc">
-                Chia sẻ trải nghiệm ngọt ngào của bạn tại Donut Saigon. Mỗi đánh giá là một động lực để chúng mình hoàn thiện hơn mỗi ngày.
+                Xem lại đơn hàng, cập nhật thông tin và tận hưởng những ưu đãi ngọt ngào dành riêng cho bạn.
               </p>
             </header>
 

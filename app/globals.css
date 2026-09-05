@@ -1539,8 +1539,9 @@ main {
   color: #FFFFFF !important;
   border-color: transparent !important;
   transform: translateY(-2px);
-  box-shadow: 0 6px 18px rgba(45, 97, 173, 0.35);
+  /* box-shadow: 0 6px 18px rgba(45, 97, 173, 0.35); */
 }
+
 
 .about-hero-visual {
   flex: 1;
@@ -4949,7 +4950,7 @@ body.account-page:not(.dashboard-mode) donut-footer {
 .account-header-desc {
   font-size: 16px;
   color: var(--avatar-text);
-  max-width: 700px;
+  max-width: 800px;
   line-height: 1.65;
 }
 
@@ -5062,6 +5063,7 @@ body.account-page:not(.dashboard-mode) donut-footer {
   font-family: var(--font-family-display);
   font-size: 22px;
   font-weight: 900;
+  color: #FFFFFF;
   margin-bottom: 10px;
 }
 
@@ -5443,7 +5445,7 @@ body.account-page:not(.dashboard-mode) donut-footer {
 
 .cart-shop-now-btn:hover span,
 .cart-shop-now-btn:hover * {
-  color: #2D61AD !important;
+  color: white !important;
 }
 
 /* Right Column: Summary Card */
@@ -6590,6 +6592,8 @@ body.account-page:not(.dashboard-mode) donut-footer {
 /* --------------------------------------------------------------------------
    Product Detail Page (Figma Node 1990:55171)
    -------------------------------------------------------------------------- */
+body.product-detail-page,
+main.product-detail-page,
 .product-detail-page {
   background-color: #F9D2D8;
 }
@@ -6597,6 +6601,7 @@ body.account-page:not(.dashboard-mode) donut-footer {
 .detail-main-section {
   padding: 32px 24px 80px;
   min-height: calc(100vh - var(--header-height));
+  background-color: #F9D2D8;
 }
 
 .detail-wrapper {
@@ -7300,6 +7305,7 @@ body.account-page:not(.dashboard-mode) donut-footer {
   font-weight: 900;
   color: #1E1B18;
   margin-bottom: 6px;
+  text-align: center;
 }
 
 .related-card-desc {
@@ -8166,6 +8172,7 @@ body.reviews-page main {
   font-weight: 900;
   color: #1E1B18;
   margin-bottom: 6px;
+  text-align: center;
   transition: color var(--transition-fast);
 }
 

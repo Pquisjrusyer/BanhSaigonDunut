@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, Suspense } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useCart } from '../../context/CartContext';
@@ -105,11 +105,18 @@ function ProductDetailContent() {
   const [isCustomBoxOpen, setIsCustomBoxOpen] = useState(false);
   const { addToCart } = useCart();
 
-  React.useEffect(() => {
+  useEffect(() => {
     window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
     setActiveImgIndex(0);
     setQuantity(1);
   }, [productId]);
+
+  useEffect(() => {
+    document.body.classList.add('product-detail-page');
+    return () => {
+      document.body.classList.remove('product-detail-page');
+    };
+  }, []);
 
   const handleAddToCart = () => {
     if (productId === 'gift-box' || product.isGiftBox) {
@@ -143,7 +150,7 @@ function ProductDetailContent() {
   };
 
   return (
-    <main>
+    <main className="product-detail-page">
       <section className="detail-main-section" aria-label={`Chi tiết sản phẩm ${product.name}`}>
         <div className="detail-wrapper">
           {/* Breadcrumb Navigation */}
