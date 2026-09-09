@@ -90,7 +90,7 @@ const PRODUCTS_DATA = {
     isGiftBox: true,
     desc: 'Bao gồm 4 chiếc bánh donut tự chọn bất kỳ cùng một lá thư tay được viết riêng, giúp mỗi hộp quà không chỉ ngọt ngào bởi hương vị mà còn đong đầy những cảm xúc chân thành.',
     shortDesc: 'Hộp quà 4 bánh donut nghệ nhân tự chọn cùng thư tay thủ công tinh tế.',
-    images: ['/assets/cat-gift-box.png', '/assets/detail-thumb-1.png', '/assets/detail-thumb-2.png'],
+    images: ['/assets/gift-box-main.png', '/assets/detail-thumb-1.png', '/assets/detail-thumb-2.png'],
   },
 };
 
